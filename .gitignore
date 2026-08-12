@@ -1,0 +1,40 @@
+# ===== Node / Angular (front/) =====
+node_modules/
+dist/
+tmp/
+out-tsc/
+bazel-out/
+.angular/
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ===== Java / Maven (regras adicionais em back/.gitignore) =====
+target/
+*.jar
+*.war
+!**/.mvn/wrapper/maven-wrapper.jar
+
+# ===== IDEs =====
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.project
+.classpath
+.settings/
+nbproject/
+
+# ===== Sistema operacional =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== Gerado pelo Spring Initializr =====
+HELP.md
+
+# ===== Variaveis de ambiente / segredos =====
+.env
+.env.local
+*.local.properties
