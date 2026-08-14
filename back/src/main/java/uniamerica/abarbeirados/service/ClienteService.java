@@ -49,7 +49,6 @@ public class ClienteService {
     }
 
     private Cliente buscarEntidadePorId(Long id) {
-        return clienteRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com id " + id));
+        return clienteRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com id " + id));
     }
 }
