@@ -1,6 +1,12 @@
 package uniamerica.abarbeirados.dto.cliente;
 
+import java.time.LocalDateTime;
+
 public record ClienteResponse(
-        // TODO: campos aqui
+        Long id,
+        String nome,
+        String email,
+        String telefone,
+        LocalDateTime  dataCadastro
 ) {
 }
