@@ -1,6 +1,12 @@
 package uniamerica.abarbeirados.dto.servico;
 
+import java.math.BigDecimal;
+
 public record ServicoResponse(
-        // TODO: campos aqui
+        Long id,
+        String nome,
+        BigDecimal valor,
+        Integer duracaoMinutos,
+        Boolean ativo
 ) {
 }
