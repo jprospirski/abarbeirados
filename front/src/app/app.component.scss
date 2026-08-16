@@ -1,0 +1,8 @@
+:host { display: block; font-family: Arial, sans-serif; }
+.pagina { max-width: 960px; margin: 0 auto; padding: 24px; }
+header { display: flex; gap: 16px; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+.lista-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+.card { padding: 16px; border: 1px solid #ddd; border-radius: 8px; }
+.card h2, .card p { margin: 0 0 8px; }
+.mensagem-erro { color: #b42318; }
