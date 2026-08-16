@@ -1,29 +1,51 @@
-import { TestBed } from '@angular/core/testing';
-import { AppComponent } from './app.component';
+import { DecimalPipe } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { Component, inject, OnInit } from '@angular/core';
 
-describe('AppComponent', () => {
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [AppComponent],
-    }).compileComponents();
-  });
+interface Servico {
+  id: number;
+  nome: string;
+  valor: number;
+  duracaoMinutos: number;
+  ativo: boolean;
+}
 
-  it('should create the app', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
-  });
+@Component({
+  selector: 'app-root',
+  imports: [DecimalPipe],
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.scss'
+})
+export class AppComponent implements OnInit {
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = 'http://localhost:8080/api/servicos';
 
-  it(`should have the 'front' title`, () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app.title).toEqual('front');
-  });
+  servicos: Servico[] = [];
+  busca = '';
+  carregando = true;
+  erro = '';
 
-  it('should render title', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, front');
-  });
-});
+  get servicosFiltrados(): Servico[] {
+    const termo = this.busca.trim().toLowerCase();
+    return termo
+      ? this.servicos.filter((servico) => servico.nome.toLowerCase().includes(termo))
+      : this.servicos;
+  }
+
+  ngOnInit(): void {
+    this.http.get<Servico[]>(this.apiUrl).subscribe({
+      next: (servicos) => {
+        this.servicos = servicos;
+        this.carregando = false;
+      },
+      error: () => {
+        this.erro = 'Não foi possível carregar os serviços.';
+        this.carregando = false;
+      }
+    });
+  }
+
+  atualizarBusca(event: Event): void {
+    this.busca = (event.target as HTMLInputElement).value;
+  }
+}
