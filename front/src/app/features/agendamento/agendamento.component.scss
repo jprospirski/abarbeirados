@@ -1,0 +1,557 @@
+/* =============================================================================
+   Tela de agendamento — painel único em blocos + resumo lateral.
+
+   O arredondamento segue a regra do kit: raio na silhueta do grupo, nunca nas
+   partes. É por isso que `overflow: hidden` aparece nos conjuntos contíguos —
+   ele é que recorta as células retas contra o canto arredondado do grupo.
+   ========================================================================== */
+
+.agendar {
+  max-width: 1400px;
+  padding: 22px 20px 48px;
+}
+
+.agendar__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 318px;
+  gap: 14px;
+  align-items: start;
+}
+
+/* ----------------------------------------------------------- card unico -- */
+
+.painel {
+  min-width: 0;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+  overflow: hidden;
+}
+
+.bloco {
+  padding: 20px 22px;
+
+  &+& {
+    border-top: 1px solid var(--cor-borda);
+  }
+
+  &--erro {
+    background: var(--cor-perigo-tenue);
+    box-shadow: inset 3px 0 0 var(--cor-perigo);
+  }
+}
+
+.bloco__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.bloco__mes {
+  color: var(--cor-marca);
+  font-family: var(--fonte-display);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.bloco__meta {
+  color: var(--cor-texto-fraco);
+  font-family: var(--fonte-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------- alternador --- */
+
+.alternador {
+  display: inline-flex;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-pequeno);
+  overflow: hidden;
+}
+
+.alternador__op {
+  padding: 5px 13px;
+  border: 0;
+  background: transparent;
+  color: var(--cor-texto-suave);
+  font-family: var(--fonte-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+
+  &+& {
+    border-left: 1px solid var(--cor-borda-forte);
+  }
+
+  &:hover {
+    color: var(--cor-texto);
+  }
+
+  &.is-ativo {
+    background: var(--cor-marca-cheia);
+    color: var(--cor-sobre-marca);
+    font-weight: 600;
+  }
+}
+
+.trio {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1.4fr;
+  gap: 10px;
+}
+
+/* ------------------------------------------------------------ carrinho -- */
+
+.carrinho {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-medio);
+  background: var(--cor-borda-forte);
+  overflow: hidden;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0 10px;
+  padding: 14px 13px;
+  border: 0;
+  background: var(--cor-fundo);
+  text-align: left;
+  transition: background 0.12s ease;
+
+  &:hover {
+    background: var(--cor-superficie-alta);
+  }
+
+  &.is-ativo {
+    background: var(--cor-marca-fundo);
+
+    .item__check {
+      border-color: var(--cor-marca-cheia);
+      background: var(--cor-marca-cheia);
+
+      &::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 5px;
+        width: 4px;
+        height: 8px;
+        border: solid var(--cor-sobre-marca);
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+    }
+  }
+}
+
+.item__check {
+  position: relative;
+  grid-row: 1 / 3;
+  align-self: center;
+  width: 15px;
+  height: 15px;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-minimo);
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease;
+}
+
+.item__nome {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.item__meta {
+  color: var(--cor-texto-fraco);
+  font-family: var(--fonte-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+}
+
+.combo {
+  padding: 4px 9px;
+  border-radius: var(--raio-minimo);
+  background: var(--cor-ok);
+  color: var(--cor-sobre-ok);
+  font-family: var(--fonte-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.quimica {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  max-width: 340px;
+  margin-top: 14px;
+}
+
+.quimica__campo {
+  display: block;
+
+  span {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--cor-texto-suave);
+    font-family: var(--fonte-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+}
+
+/* -------------------------------------------------------- faixa semanal -- */
+
+.semana {
+  display: flex;
+  align-items: stretch;
+}
+
+/* Só as pontas da faixa arredondam; os sete dias do meio ficam retos. */
+.semana__seta {
+  flex: none;
+  width: 32px;
+  border: 1px solid var(--cor-borda-forte);
+  background: var(--cor-fundo);
+  color: var(--cor-texto-suave);
+  font-size: 18px;
+  line-height: 1;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+
+  &:first-child {
+    border-radius: var(--raio-medio) 0 0 var(--raio-medio);
+  }
+
+  &:last-child {
+    border-radius: 0 var(--raio-medio) var(--raio-medio) 0;
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--cor-marca-cheia);
+    color: var(--cor-sobre-marca);
+  }
+
+  &:disabled {
+    color: var(--cor-borda-forte);
+    cursor: not-allowed;
+  }
+}
+
+.semana__dias {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+  border-block: 1px solid var(--cor-borda-forte);
+  background: var(--cor-borda-forte);
+}
+
+.dia {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 5px;
+  padding: 12px 4px;
+  border: 0;
+  background: var(--cor-fundo);
+  white-space: nowrap;
+  transition: background 0.12s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--cor-superficie-alta);
+  }
+
+  &.is-ativo {
+    background: var(--cor-marca-cheia);
+
+    .dia__rotulo,
+    .dia__mes,
+    .dia__num {
+      color: var(--cor-sobre-marca);
+    }
+  }
+
+  /* Hoje ganha um traço na base enquanto não está selecionado. */
+  &.is-hoje:not(.is-ativo) {
+    box-shadow: inset 0 -2px 0 var(--cor-marca);
+  }
+
+  /* Dia que já passou ou lotou continua na faixa, só apagado. O traço de hoje
+     sai daqui para não competir com os dias que ainda dá para reservar. */
+  &:disabled {
+    cursor: not-allowed;
+    box-shadow: none;
+
+    .dia__rotulo,
+    .dia__mes,
+    .dia__num {
+      color: var(--cor-texto-fraco);
+      font-weight: 400;
+    }
+  }
+}
+
+.dia__rotulo,
+.dia__mes {
+  color: var(--cor-texto-suave);
+  font-family: var(--fonte-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+}
+
+.dia__num {
+  font-family: var(--fonte-display);
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------- grade de horarios -- */
+
+.grade__vazio {
+  margin-bottom: 12px;
+  padding: 11px 13px;
+  border-left: 3px solid var(--cor-borda-forte);
+  border-radius: 0 var(--raio-pequeno) var(--raio-pequeno) 0;
+  background: var(--cor-fundo);
+  color: var(--cor-texto-suave);
+  font-size: 13px;
+}
+
+/**
+ * A exceção à regra da silhueta. Como a quantidade de horários livres varia, a
+ * última linha fica irregular e não há retângulo para arredondar — então o raio
+ * vai para a peça e os blocos viram fichas soltas.
+ */
+.grade__slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+  gap: 7px;
+}
+
+.slot {
+  padding: 10px 4px;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-pequeno);
+  background: var(--cor-fundo);
+  font-family: var(--fonte-mono);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+
+  &:hover {
+    border-color: var(--cor-marca);
+    background: var(--cor-marca-fundo);
+    color: var(--cor-marca);
+  }
+
+  &.is-ativo {
+    border-color: var(--cor-marca-cheia);
+    background: var(--cor-marca-cheia);
+    color: var(--cor-sobre-marca);
+    font-weight: 600;
+  }
+}
+
+/* ------------------------------------------------------------ observacao -- */
+
+/* O "+" ganha peso próprio para o botão ler como ação, e não como link. */
+.botao-secundario__mais {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 0;
+}
+
+.obs__remover {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--cor-texto-fraco);
+  font-family: var(--fonte-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: color 0.12s ease;
+
+  &:hover {
+    color: var(--cor-perigo);
+  }
+}
+
+/* --------------------------------------------------------------- trilho -- */
+
+.trilho {
+  position: sticky;
+  top: 22px;
+  min-width: 0;
+}
+
+.comprovante {
+  position: relative;
+  padding: 22px 20px;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio);
+  background: var(--cor-superficie-alta);
+
+  /* Faixa chapada no topo, acompanhando os cantos do cartão. */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 5px;
+    border-radius: var(--raio) var(--raio) 0 0;
+    background: var(--cor-marca-cheia);
+  }
+
+  .botao-principal {
+    margin-top: 18px;
+  }
+}
+
+.comprovante__cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.comprovante__selo {
+  padding: 3px 8px;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-minimo);
+  color: var(--cor-texto-suave);
+  font-family: var(--fonte-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.regua--comprovante {
+  margin: 16px 0;
+  background: var(--cor-borda-forte);
+}
+
+.comprovante__corpo {
+  margin: 0;
+}
+
+.linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+
+  &+& {
+    margin-top: 10px;
+  }
+
+  dt {
+    flex: none;
+    color: var(--cor-texto-fraco);
+    font-family: var(--fonte-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+    text-align: right;
+    font-size: 13.5px;
+    font-weight: 500;
+  }
+}
+
+.ate {
+  color: var(--cor-texto-fraco);
+  font-weight: 400;
+}
+
+.comprovante__total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.comprovante__rotulo-total {
+  color: var(--cor-texto-suave);
+  font-family: var(--fonte-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* O total é o número grande da tela — puxa o olho para o fecho da operação. */
+.comprovante__valor {
+  color: var(--cor-marca);
+  font-family: var(--fonte-display);
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------ responsivo -- */
+
+@media (max-width: 1020px) {
+  .agendar__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .trilho {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .carrinho {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .agendar {
+    padding: 18px 14px 44px;
+  }
+
+  .bloco {
+    padding: 18px 16px;
+  }
+
+  .trio {
+    grid-template-columns: 1fr;
+  }
+
+  .quimica {
+    max-width: none;
+  }
+
+  /* Os 7 dias passam a rolar lateralmente em vez de espremer. */
+  .semana__dias {
+    grid-template-columns: repeat(7, 76px);
+    overflow-x: auto;
+  }
+}

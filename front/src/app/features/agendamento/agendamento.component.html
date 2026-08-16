@@ -1,0 +1,313 @@
+<div class="agendar">
+  <form class="agendar__grid" [formGroup]="form" (ngSubmit)="confirmar()">
+    <!-- ============================================== card unico do fluxo -->
+    <div class="painel">
+      <!-- --------------------------------------------------- cliente -->
+      <section class="bloco" [class.bloco--erro]="clienteInvalido">
+        <div class="bloco__topo">
+          <h2 class="rotulo">01 Cliente</h2>
+          <div class="alternador">
+            <button
+              type="button"
+              class="alternador__op"
+              [class.is-ativo]="modoCliente() === 'existente'"
+              (click)="definirModoCliente('existente')"
+            >
+              Cadastrado
+            </button>
+            <button
+              type="button"
+              class="alternador__op"
+              [class.is-ativo]="modoCliente() === 'novo'"
+              (click)="definirModoCliente('novo')"
+            >
+              Novo
+            </button>
+          </div>
+        </div>
+
+        @if (modoCliente() === 'existente') {
+          <select class="campo__entrada" formControlName="clienteId" aria-label="Cliente">
+            <option [ngValue]="null">Selecione um cliente...</option>
+            @for (cliente of service.clientes(); track cliente.id) {
+              <option [ngValue]="cliente.id">
+                {{ cliente.nome }} &middot; {{ cliente.telefone }}
+              </option>
+            }
+          </select>
+        } @else {
+          <div class="trio">
+            <input
+              class="campo__entrada"
+              type="text"
+              formControlName="novoNome"
+              placeholder="Nome completo"
+              aria-label="Nome completo"
+              autocomplete="off"
+            />
+            <input
+              class="campo__entrada"
+              type="tel"
+              formControlName="novoTelefone"
+              placeholder="Telefone"
+              aria-label="Telefone"
+              autocomplete="off"
+            />
+            <input
+              class="campo__entrada"
+              type="email"
+              formControlName="novoEmail"
+              placeholder="E-mail (opcional)"
+              aria-label="E-mail"
+              autocomplete="off"
+            />
+          </div>
+        }
+
+        @if (clienteInvalido) {
+          <p class="aviso">Informe o cliente para seguir</p>
+        }
+      </section>
+
+      <!-- -------------------------------------------------- servicos -->
+      <section class="bloco" [class.bloco--erro]="servicoInvalido">
+        <div class="bloco__topo">
+          <h2 class="rotulo">02 Serviços</h2>
+          @if (economia() > 0) {
+            <span class="combo">Combo &minus;{{ economia() | currency: 'BRL' }}</span>
+          }
+        </div>
+
+        <div class="carrinho">
+          @for (item of service.itensCarrinho; track item.chave) {
+            <button
+              type="button"
+              class="item"
+              [class.is-ativo]="marcado(item.chave)"
+              [attr.aria-pressed]="marcado(item.chave)"
+              (click)="alternarItem(item)"
+            >
+              <span class="item__check" aria-hidden="true"></span>
+              <span class="item__nome">{{ item.nome }}</span>
+              <span class="item__meta">
+                @if (item.personalizado) {
+                  a combinar
+                } @else {
+                  {{ item.duracaoMinutos }} min &middot; {{ item.valor | currency: 'BRL' }}
+                }
+              </span>
+            </button>
+          }
+        </div>
+
+        @if (temQuimica()) {
+          <div class="quimica">
+            <label class="quimica__campo">
+              <span>Duração (min)</span>
+              <input
+                class="campo__entrada"
+                type="number"
+                min="10"
+                step="10"
+                formControlName="quimicaDuracao"
+                placeholder="90"
+              />
+            </label>
+            <label class="quimica__campo">
+              <span>Valor (R$)</span>
+              <input
+                class="campo__entrada"
+                type="number"
+                min="1"
+                step="10"
+                formControlName="quimicaValor"
+                placeholder="160"
+              />
+            </label>
+          </div>
+        }
+
+        @if (servicoInvalido) {
+          <p class="aviso">
+            @if (temQuimica()) {
+              Informe duração e valor da química
+            } @else {
+              Selecione ao menos um serviço
+            }
+          </p>
+        }
+      </section>
+
+      <!-- ------------------------------------------------------ data -->
+      <section class="bloco">
+        <div class="bloco__topo">
+          <h2 class="rotulo">03 Data</h2>
+          <span class="bloco__mes">{{ tituloMes() }}</span>
+        </div>
+
+        <div class="semana">
+          <button
+            type="button"
+            class="semana__seta"
+            [disabled]="!podeVoltar()"
+            (click)="semanaAnterior()"
+            aria-label="Semana anterior"
+          >
+            &lsaquo;
+          </button>
+
+          <div class="semana__dias">
+            @for (dia of semana(); track dia.iso) {
+              <button
+                type="button"
+                class="dia"
+                [class.is-ativo]="form.controls.data.value === dia.iso"
+                [class.is-hoje]="dia.hoje"
+                [disabled]="dia.indisponivel"
+                [title]="dia.lotado ? 'Sem horário livre nesta data' : ''"
+                (click)="selecionarDia(dia)"
+              >
+                <span class="dia__rotulo">{{ dia.rotulo }}</span>
+                <strong class="dia__num">{{ dia.numero }}</strong>
+                <span class="dia__mes">{{ dia.mes }}</span>
+              </button>
+            }
+          </div>
+
+          <button
+            type="button"
+            class="semana__seta"
+            (click)="semanaSeguinte()"
+            aria-label="Próxima semana"
+          >
+            &rsaquo;
+          </button>
+        </div>
+      </section>
+
+      <!-- --------------------------------------------------- horario -->
+      <section class="bloco" [class.bloco--erro]="horaInvalida">
+        <div class="bloco__topo">
+          <h2 class="rotulo">04 Horário</h2>
+          <span class="bloco__meta">
+            {{ vagasLivres() }} {{ vagasLivres() === 1 ? 'vaga' : 'vagas' }}
+          </span>
+        </div>
+
+        @if (vagasLivres() === 0) {
+          <p class="grade__vazio">
+            Nenhum horário disponível nesta data para os serviços escolhidos.
+          </p>
+        }
+
+        <div class="grade__slots">
+          @for (horario of horarios(); track horario.hora) {
+            <button
+              type="button"
+              class="slot"
+              [class.is-ativo]="form.controls.hora.value === horario.hora"
+              (click)="selecionarHorario(horario)"
+            >
+              {{ horario.hora }}
+            </button>
+          }
+        </div>
+
+        @if (horaInvalida) {
+          <p class="aviso">Selecione um horário</p>
+        }
+      </section>
+
+      <!-- ------------------------------------------------ observacao -->
+      <section class="bloco">
+        @if (mostrarObs()) {
+          <div class="bloco__topo">
+            <h2 class="rotulo">Observação</h2>
+            <button type="button" class="obs__remover" (click)="removerObs()">
+              Remover
+            </button>
+          </div>
+          <textarea
+            class="campo__entrada campo__entrada--area"
+            formControlName="observacoes"
+            rows="3"
+            maxlength="280"
+            aria-label="Observações"
+            placeholder="Preferências, alergias, referências de corte..."
+          ></textarea>
+        } @else {
+          <button type="button" class="botao-secundario" (click)="mostrarObs.set(true)">
+            <span class="botao-secundario__mais" aria-hidden="true">+</span>
+            Adicionar observação
+          </button>
+        }
+      </section>
+    </div>
+
+    <!-- ==================================================== comprovante -->
+    <aside class="trilho">
+      <div class="comprovante">
+        <div class="comprovante__cabecalho">
+          <h2 class="rotulo">05 Resumo</h2>
+          <span class="comprovante__selo">
+            {{ confirmado() ? 'Confirmado' : 'Pré-reserva' }}
+          </span>
+        </div>
+
+        <hr class="regua regua--comprovante" />
+
+        <dl class="comprovante__corpo">
+          <div class="linha">
+            <dt>Cliente</dt>
+            <dd>{{ nomeCliente() || '—' }}</dd>
+          </div>
+          <div class="linha">
+            <dt>Serviço</dt>
+            <dd>{{ servicoResolvido()?.nome || '—' }}</dd>
+          </div>
+          <div class="linha">
+            <dt>Data</dt>
+            <dd>{{ dataExtenso() }}</dd>
+          </div>
+          <div class="linha">
+            <dt>Horário</dt>
+            <dd>
+              @if (form.controls.hora.value) {
+                {{ form.controls.hora.value }}
+                @if (horaFim()) {
+                  <span class="ate">às {{ horaFim() }}</span>
+                }
+              } @else {
+                —
+              }
+            </dd>
+          </div>
+          <div class="linha">
+            <dt>Duração</dt>
+            <dd>{{ duracao() ? duracao() + ' min' : '—' }}</dd>
+          </div>
+        </dl>
+
+        <hr class="regua regua--comprovante" />
+
+        <div class="comprovante__total">
+          <span class="comprovante__rotulo-total">Total</span>
+          <strong class="comprovante__valor">{{ total() | currency: 'BRL' }}</strong>
+        </div>
+
+        @if (erro()) {
+          <p class="alerta alerta--erro" role="alert">{{ erro() }}</p>
+        }
+
+        @if (confirmado(); as reserva) {
+          <p class="alerta alerta--ok" role="status">
+            Agendado para {{ reserva.clienteNome }} às
+            {{ reserva.dataHora.slice(11, 16) }}. Comanda #{{ reserva.id }}.
+          </p>
+        }
+
+        <button type="submit" class="botao-principal">Confirmar agendamento</button>
+      </div>
+    </aside>
+  </form>
+</div>
