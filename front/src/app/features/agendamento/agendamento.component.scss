@@ -6,16 +6,20 @@
    ele é que recorta as células retas contra o canto arredondado do grupo.
    ========================================================================== */
 
+/* Sem trava de largura: o conteúdo ocupa a área toda que sobra da lateral. Com
+   um max-width e sem centragem, tudo encostava à esquerda e deixava um vão morto
+   à direita em telas largas. */
 .agendar {
-  max-width: 1400px;
-  padding: 22px 20px 48px;
+  padding: 22px 24px 48px;
 }
 
+/* Sem `align-items: start`: as duas colunas esticam até a altura da linha, que é
+   dada pelo painel do formulário. É assim que o resumo acompanha a altura do
+   cadastro em vez de parar na altura do próprio conteúdo. */
 .agendar__grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 318px;
+  grid-template-columns: minmax(0, 1fr) 430px;
   gap: 14px;
-  align-items: start;
 }
 
 /* ----------------------------------------------------------- card unico -- */
@@ -66,42 +70,8 @@
   text-transform: uppercase;
 }
 
-/* ---------------------------------------------------------- alternador --- */
-
-.alternador {
-  display: inline-flex;
-  border: 1px solid var(--cor-borda-forte);
-  border-radius: var(--raio-pequeno);
-  overflow: hidden;
-}
-
-.alternador__op {
-  padding: 5px 13px;
-  border: 0;
-  background: transparent;
-  color: var(--cor-texto-suave);
-  font-family: var(--fonte-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  transition:
-    background 0.12s ease,
-    color 0.12s ease;
-
-  &+& {
-    border-left: 1px solid var(--cor-borda-forte);
-  }
-
-  &:hover {
-    color: var(--cor-texto);
-  }
-
-  &.is-ativo {
-    background: var(--cor-marca-cheia);
-    color: var(--cor-sobre-marca);
-    font-weight: 600;
-  }
-}
+/* O alternador virou peça do kit compartilhado em styles.scss, porque a tela de
+   serviços passou a usar a mesma forma. */
 
 .trio {
   display: grid;
@@ -218,112 +188,8 @@
 
 /* -------------------------------------------------------- faixa semanal -- */
 
-.semana {
-  display: flex;
-  align-items: stretch;
-}
-
-/* Só as pontas da faixa arredondam; os sete dias do meio ficam retos. */
-.semana__seta {
-  flex: none;
-  width: 32px;
-  border: 1px solid var(--cor-borda-forte);
-  background: var(--cor-fundo);
-  color: var(--cor-texto-suave);
-  font-size: 18px;
-  line-height: 1;
-  transition:
-    background 0.12s ease,
-    color 0.12s ease;
-
-  &:first-child {
-    border-radius: var(--raio-medio) 0 0 var(--raio-medio);
-  }
-
-  &:last-child {
-    border-radius: 0 var(--raio-medio) var(--raio-medio) 0;
-  }
-
-  &:hover:not(:disabled) {
-    background: var(--cor-marca-cheia);
-    color: var(--cor-sobre-marca);
-  }
-
-  &:disabled {
-    color: var(--cor-borda-forte);
-    cursor: not-allowed;
-  }
-}
-
-.semana__dias {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 1px;
-  flex: 1;
-  min-width: 0;
-  border-block: 1px solid var(--cor-borda-forte);
-  background: var(--cor-borda-forte);
-}
-
-.dia {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 5px;
-  padding: 12px 4px;
-  border: 0;
-  background: var(--cor-fundo);
-  white-space: nowrap;
-  transition: background 0.12s ease;
-
-  &:hover:not(:disabled) {
-    background: var(--cor-superficie-alta);
-  }
-
-  &.is-ativo {
-    background: var(--cor-marca-cheia);
-
-    .dia__rotulo,
-    .dia__mes,
-    .dia__num {
-      color: var(--cor-sobre-marca);
-    }
-  }
-
-  /* Hoje ganha um traço na base enquanto não está selecionado. */
-  &.is-hoje:not(.is-ativo) {
-    box-shadow: inset 0 -2px 0 var(--cor-marca);
-  }
-
-  /* Dia que já passou ou lotou continua na faixa, só apagado. O traço de hoje
-     sai daqui para não competir com os dias que ainda dá para reservar. */
-  &:disabled {
-    cursor: not-allowed;
-    box-shadow: none;
-
-    .dia__rotulo,
-    .dia__mes,
-    .dia__num {
-      color: var(--cor-texto-fraco);
-      font-weight: 400;
-    }
-  }
-}
-
-.dia__rotulo,
-.dia__mes {
-  color: var(--cor-texto-suave);
-  font-family: var(--fonte-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.04em;
-}
-
-.dia__num {
-  font-family: var(--fonte-display);
-  font-size: 15px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
+/* A faixa de dias virou peça do kit compartilhado em styles.scss, porque a
+   agenda passou a usar a mesma forma para filtrar por dia. */
 
 /* ---------------------------------------------------- grade de horarios -- */
 
@@ -342,9 +208,13 @@
  * última linha fica irregular e não há retângulo para arredondar — então o raio
  * vai para a peça e os blocos viram fichas soltas.
  */
+/* auto-fit e não auto-fill: o auto-fill mantém as trilhas vazias abertas, e com
+   o painel ocupando a largura toda sobrava meia faixa morta à direita quando o
+   dia tinha poucos horários livres. O auto-fit recolhe as trilhas vazias e os
+   horários existentes se distribuem pela linha inteira. */
 .grade__slots {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
   gap: 7px;
 }
 
@@ -402,14 +272,18 @@
 
 /* --------------------------------------------------------------- trilho -- */
 
+/* Sem `position: sticky`: o cartão agora tem a altura da linha inteira, então não
+   sobra curso para ele deslizar — grudar no topo virou efeito nenhum. */
 .trilho {
-  position: sticky;
-  top: 22px;
+  display: flex;
   min-width: 0;
 }
 
 .comprovante {
   position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   padding: 22px 20px;
   border: 1px solid var(--cor-borda-forte);
   border-radius: var(--raio);
@@ -425,8 +299,11 @@
     background: var(--cor-marca-cheia);
   }
 
+  /* `auto` em vez de uma medida fixa: com o cartão esticado, a sobra de altura
+     vai toda para cima do botão e ele fica ancorado na base. Quando não há
+     sobra, o respiro de 18px vem do margin-bottom do total. */
   .botao-principal {
-    margin-top: 18px;
+    margin-top: auto;
   }
 }
 
@@ -494,6 +371,8 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
+  /* Garante o respiro abaixo do total mesmo quando o botão sobe para a base. */
+  margin-bottom: 18px;
 }
 
 .comprovante__rotulo-total {
@@ -516,13 +395,11 @@
 
 /* ------------------------------------------------------------ responsivo -- */
 
-@media (max-width: 1020px) {
+/* Sobe de 1020px porque a coluna do resumo passou de 318px para 430px: abaixo
+   disto o painel do formulário ficaria mais estreito que o próprio resumo. */
+@media (max-width: 1200px) {
   .agendar__grid {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .trilho {
-    position: static;
   }
 }
 
@@ -534,11 +411,19 @@
 
 @media (max-width: 620px) {
   .agendar {
-    padding: 18px 14px 44px;
+    padding: 16px 14px 40px;
   }
 
   .bloco {
     padding: 18px 16px;
+  }
+
+  .bloco__topo {
+    gap: 10px;
+  }
+
+  .bloco__mes {
+    font-size: 1rem;
   }
 
   .trio {
@@ -546,12 +431,50 @@
   }
 
   .quimica {
+    grid-template-columns: 1fr;
     max-width: none;
   }
 
-  /* Os 7 dias passam a rolar lateralmente em vez de espremer. */
+  /* Uma coluna: com duas, o nome do serviço quebrava no meio da palavra. */
+  .carrinho {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* A tira rola com o dedo e cada dia encaixa no lugar ao soltar. */
   .semana__dias {
-    grid-template-columns: repeat(7, 76px);
+    grid-template-columns: repeat(7, 84px);
     overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .dia {
+    scroll-snap-align: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 9px 4px;
+  }
+
+  /* Alvo de toque: 3 por linha em vez de espremer 4. */
+  .grade__slots {
+    grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  }
+
+  .slot {
+    padding: 13px 4px;
+  }
+
+  .comprovante {
+    padding: 20px 16px;
+  }
+
+  .comprovante__valor {
+    font-size: 1.7rem;
   }
 }

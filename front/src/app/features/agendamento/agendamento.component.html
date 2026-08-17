@@ -295,6 +295,10 @@
           <strong class="comprovante__valor">{{ total() | currency: 'BRL' }}</strong>
         </div>
 
+        @if (service.erroCarga(); as falha) {
+          <p class="alerta alerta--erro" role="alert">{{ falha }}</p>
+        }
+
         @if (erro()) {
           <p class="alerta alerta--erro" role="alert">{{ erro() }}</p>
         }
@@ -306,7 +310,9 @@
           </p>
         }
 
-        <button type="submit" class="botao-principal">Confirmar agendamento</button>
+        <button type="submit" class="botao-principal" [disabled]="salvando()">
+          {{ salvando() ? 'Agendando...' : 'Confirmar agendamento' }}
+        </button>
       </div>
     </aside>
   </form>

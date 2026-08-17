@@ -1,4 +1,6 @@
-import { Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject, signal } from '@angular/core';
+import { Observable, catchError, forkJoin, map, tap, throwError } from 'rxjs';
 
 import {
   Agendamento,
@@ -25,29 +27,33 @@ import {
 /**
  * Camada de dados da tela de agendamento.
  *
- * Os dados estão em memória de propósito: o domínio Agendamento ainda é stub no
- * backend — controller, service e repository só têm TODO. As regras daqui são
- * as mesmas que o Java vai precisar validar.
- *
- * Para ligar na API é só injetar HttpClient e trocar o corpo dos métodos
- * públicos; as assinaturas já seguem o formato dos endpoints:
+ * Os dados vêm da API. As três listas ficam em signals carregados uma vez por
+ * `carregar()`, e as consultas abaixo (grade de horários, agenda do dia) leem
+ * desses signals — por isso continuam síncronas e podem ser usadas direto no
+ * template. Só as escritas devolvem Observable.
  *
  *   listarClientes()         GET    /api/clientes
  *   listarServicos()         GET    /api/servicos?apenasAtivos=true
  *   criarCliente(req)        POST   /api/clientes
- *   agendaDoDia(data)        GET    /api/agendamentos?data=yyyy-MM-dd
- *   criar(req)               POST   /api/agendamentos
+ *   criar(req, duracao)      POST   /api/agendamentos
  *   atualizarStatus(id, st)  PATCH  /api/agendamentos/{id}/status
  *
  * O proxy.conf.json manda /api para a 8080, então em `ng serve` não há CORS.
  */
 @Injectable({ providedIn: 'root' })
 export class AgendamentoService {
+  private readonly http = inject(HttpClient);
+
   readonly abertura = '09:00';
   readonly fechamento = '19:00';
   /** De quantos em quantos minutos a agenda oferece um horário. */
   readonly intervalo = 40;
 
+  /*
+   * O carrinho é conceito de tela e não tem tabela no banco: o atendente marca
+   * itens soltos e a combinação é traduzida para um Serviço único em
+   * resolverServico(). Por isso esta lista continua fixa aqui.
+   */
   readonly itensCarrinho: ItemCarrinho[] = [
     { chave: 'CORTE', nome: 'Corte', duracaoMinutos: 40, valor: 50 },
     { chave: 'BARBA', nome: 'Barba', duracaoMinutos: 20, valor: 30 },
@@ -62,16 +68,58 @@ export class AgendamentoService {
     },
   ];
 
-  private readonly _clientes = signal<Cliente[]>(CLIENTES_INICIAIS);
-  private readonly _servicos = signal<Servico[]>(SERVICOS_INICIAIS);
-  private readonly _agendamentos = signal<Agendamento[]>(agendamentosIniciais());
-
-  private proximoClienteId = 5;
-  private proximoAgendamentoId = 4;
+  private readonly _clientes = signal<Cliente[]>([]);
+  private readonly _servicos = signal<Servico[]>([]);
+  private readonly _agendamentos = signal<Agendamento[]>([]);
+  private readonly _carregando = signal(false);
+  private readonly _erroCarga = signal<string | null>(null);
 
   readonly clientes = this._clientes.asReadonly();
   readonly servicos = this._servicos.asReadonly();
   readonly agendamentos = this._agendamentos.asReadonly();
+  readonly carregando = this._carregando.asReadonly();
+  readonly erroCarga = this._erroCarga.asReadonly();
+
+  private carregado = false;
+
+  // ------------------------------------------------------------------- carga
+
+  /**
+   * Puxa clientes, serviços e agendamentos de uma vez.
+   *
+   * As telas chamam sem argumento, então a primeira que abrir carrega e a
+   * segunda reaproveita. `forcar` serve para recarregar depois de uma escrita.
+   */
+  carregar(forcar = false): void {
+    if (this.carregado && !forcar) {
+      return;
+    }
+
+    this.carregado = true;
+    this._carregando.set(true);
+    this._erroCarga.set(null);
+
+    forkJoin({
+      clientes: this.http.get<Cliente[]>('/api/clientes'),
+      servicos: this.http.get<Servico[]>('/api/servicos?apenasAtivos=true'),
+      agendamentos: this.http.get<Agendamento[]>('/api/agendamentos'),
+    }).subscribe({
+      next: ({ clientes, servicos, agendamentos }) => {
+        this._clientes.set(clientes);
+        this._servicos.set(servicos);
+        this._agendamentos.set(agendamentos);
+        this._carregando.set(false);
+      },
+      error: () => {
+        this._erroCarga.set(
+          'Não foi possível falar com o servidor. Confira se o backend está no ar na porta 8080.',
+        );
+        this._carregando.set(false);
+        // Deixa tentar de novo na próxima visita à tela.
+        this.carregado = false;
+      },
+    });
+  }
 
   // ------------------------------------------------------- catalogo/combos
 
@@ -177,48 +225,32 @@ export class AgendamentoService {
 
   // ---------------------------------------------------------------- comandos
 
-  criarCliente(request: ClienteRequest): Cliente {
-    // Vazio vira null, nunca string vazia — ver o comentário no ClienteRequest.
-    const email = request.email?.trim().toLowerCase() || null;
-
-    // Mesma regra que foi sugerida para o ClienteService do backend.
-    if (email && this._clientes().some((c) => c.email?.toLowerCase() === email)) {
-      throw new Error(`Já existe um cliente com o e-mail ${email}.`);
-    }
-
-    const cliente: Cliente = {
-      id: this.proximoClienteId++,
+  criarCliente(request: ClienteRequest): Observable<Cliente> {
+    const corpo: ClienteRequest = {
       nome: request.nome.trim(),
-      email,
+      // Vazio vira null, nunca string vazia — ver o comentário no ClienteRequest.
+      email: request.email?.trim().toLowerCase() || null,
       telefone: request.telefone.trim(),
-      dataCadastro: new Date().toISOString().slice(0, 19),
     };
 
-    this._clientes.update((lista) => [...lista, cliente]);
-    return cliente;
+    return this.http.post<Cliente>('/api/clientes', corpo).pipe(
+      tap((cliente) => this._clientes.update((lista) => [...lista, cliente])),
+      catchError(traduzirErro('Não foi possível cadastrar o cliente.')),
+    );
   }
 
   /**
    * Cria o agendamento depois de revalidar o conflito de horário.
    *
-   * `duracao` e `valor` vêm por parâmetro porque a Química é acertada no
-   * atendimento; nos outros serviços eles saem do catálogo.
+   * A checagem de conflito é feita aqui porque o backend ainda não valida
+   * sobreposição — está anotado como pendência no README. `duracao` vem por
+   * parâmetro só para essa conta; o valor e a duração gravados são os que o
+   * backend copia do serviço.
    */
-  criar(request: AgendamentoRequest, duracao: number, valor: number): Agendamento {
-    const cliente = this.buscarCliente(request.clienteId);
-    if (!cliente) {
-      throw new Error('Cliente não encontrado.');
-    }
-
-    const servico = this.buscarServico(request.servicoId);
-    if (!servico) {
-      throw new Error('Combinação de serviços sem cadastro correspondente.');
-    }
-
+  criar(request: AgendamentoRequest, duracao: number): Observable<Agendamento> {
     const data = dataDe(request.dataHora);
     const inicio = paraMinutos(horaDe(request.dataHora));
 
-    // Confere de novo: outra pessoa pode ter pegado o horário nesse meio-tempo.
     const conflito = this.agendaDoDia(data)
       .filter((a) => a.status !== 'CANCELADO')
       .some((a) =>
@@ -226,32 +258,59 @@ export class AgendamentoService {
       );
 
     if (conflito) {
-      throw new Error('Esse horário acabou de ser ocupado. Escolha outro na grade.');
+      return throwError(
+        () => new Error('Esse horário acabou de ser ocupado. Escolha outro na grade.'),
+      );
     }
 
-    const agendamento: Agendamento = {
-      id: this.proximoAgendamentoId++,
-      clienteId: cliente.id,
-      clienteNome: cliente.nome,
-      clienteTelefone: cliente.telefone,
-      servicoId: servico.id,
-      servicoNome: servico.nome,
-      valor,
-      duracaoMinutos: duracao,
+    const corpo: AgendamentoRequest = {
+      clienteId: request.clienteId,
+      servicoId: request.servicoId,
       dataHora: request.dataHora,
-      status: 'AGENDADO',
       observacoes: request.observacoes?.trim() || null,
     };
 
-    this._agendamentos.update((lista) => [...lista, agendamento]);
-    return agendamento;
-  }
-
-  atualizarStatus(id: number, status: StatusAgendamento): void {
-    this._agendamentos.update((lista) =>
-      lista.map((a) => (a.id === id ? { ...a, status } : a)),
+    return this.http.post<Agendamento>('/api/agendamentos', corpo).pipe(
+      tap((criado) => this._agendamentos.update((lista) => [...lista, criado])),
+      catchError(traduzirErro('Não foi possível agendar.')),
     );
   }
+
+  atualizarStatus(id: number, status: StatusAgendamento): Observable<Agendamento> {
+    return this.http
+      .patch<Agendamento>(`/api/agendamentos/${id}/status`, { status })
+      .pipe(
+        tap((atualizado) =>
+          this._agendamentos.update((lista) =>
+            lista.map((a) => (a.id === id ? atualizado : a)),
+          ),
+        ),
+        catchError(traduzirErro('Não foi possível alterar o status.')),
+      );
+  }
+}
+
+/**
+ * Converte o ApiError do backend em Error com a mensagem que ele mandou.
+ *
+ * O GlobalException devolve sempre {status, error, message, fields}; quando é
+ * erro de validação, `fields` traz campo a campo, e é essa a mensagem útil.
+ */
+function traduzirErro(padrao: string) {
+  return (resposta: unknown): Observable<never> => {
+    const corpo = (resposta as { error?: ApiError })?.error;
+
+    const detalhe = corpo?.fields
+      ? Object.values(corpo.fields).join(' ')
+      : corpo?.message;
+
+    return throwError(() => new Error(detalhe || padrao));
+  };
+}
+
+interface ApiError {
+  message?: string;
+  fields?: Record<string, string> | null;
 }
 
 // -------------------------------------------------------------- catalogo
@@ -264,30 +323,6 @@ function normalizar(nome: string): string {
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '');
 }
-
-/**
- * O que deve existir na tabela `servico`. Cada combinação vendável é um
- * registro próprio, já que o agendamento aponta para um servicoId só.
- *
- * Os ids abaixo servem só para este mock; nada depende deles. Ao trocar por
- * `GET /api/servicos`, esta lista some e a resolução por nome continua valendo.
- */
-const SERVICOS_INICIAIS: Servico[] = [
-  { id: 1, nome: 'Corte', valor: 50, duracaoMinutos: 40, ativo: true },
-  { id: 2, nome: 'Barba', valor: 30, duracaoMinutos: 20, ativo: true },
-  { id: 3, nome: 'Sobrancelha', valor: 20, duracaoMinutos: 20, ativo: true },
-  { id: 4, nome: 'Química', valor: 0, duracaoMinutos: 0, ativo: true },
-  { id: 5, nome: 'Corte + Barba', valor: 70, duracaoMinutos: 60, ativo: true },
-  { id: 6, nome: 'Corte + Sobrancelha', valor: 60, duracaoMinutos: 60, ativo: true },
-  { id: 7, nome: 'Barba + Sobrancelha', valor: 40, duracaoMinutos: 40, ativo: true },
-  {
-    id: 8,
-    nome: 'Corte + Barba + Sobrancelha',
-    valor: 80,
-    duracaoMinutos: 70,
-    ativo: true,
-  },
-];
 
 /**
  * Itens ordenados e unidos por '|' apontando para o NOME do Serviço.
@@ -303,60 +338,3 @@ const COMBINACOES: Record<string, string> = {
   'BARBA|SOBRANCELHA': 'Barba + Sobrancelha',
   'BARBA|CORTE|SOBRANCELHA': 'Corte + Barba + Sobrancelha',
 };
-
-// ------------------------------------------------------ dados de demonstracao
-
-const CLIENTES_INICIAIS: Cliente[] = [
-  { id: 1, nome: 'Rafael Moretti', email: 'rafael.moretti@email.com', telefone: '(45) 99812-4477' },
-  { id: 2, nome: 'Diego Sanches', email: 'diego.sanches@email.com', telefone: '(45) 99640-1183' },
-  { id: 3, nome: 'Vinicius Prado', email: 'vinicius.prado@email.com', telefone: '(45) 99271-0592' },
-  { id: 4, nome: 'Otavio Lemes', email: 'otavio.lemes@email.com', telefone: '(45) 99155-8830' },
-];
-
-/** Ocupa alguns blocos de hoje para a grade já nascer com conflitos de verdade. */
-function agendamentosIniciais(): Agendamento[] {
-  const hoje = paraDataIso(new Date());
-
-  return [
-    {
-      id: 1,
-      clienteId: 1,
-      clienteNome: 'Rafael Moretti',
-      clienteTelefone: '(45) 99812-4477',
-      servicoId: 5,
-      servicoNome: 'Corte + Barba',
-      valor: 70,
-      duracaoMinutos: 60,
-      dataHora: `${hoje}T10:20`,
-      status: 'CONFIRMADO',
-      observacoes: 'Prefere máquina 2 nas laterais.',
-    },
-    // Corte de 40 min às 15:00: termina 15:40 e deixa o bloco seguinte livre.
-    {
-      id: 2,
-      clienteId: 3,
-      clienteNome: 'Vinicius Prado',
-      clienteTelefone: '(45) 99271-0592',
-      servicoId: 1,
-      servicoNome: 'Corte',
-      valor: 50,
-      duracaoMinutos: 40,
-      dataHora: `${hoje}T15:00`,
-      status: 'AGENDADO',
-      observacoes: null,
-    },
-    {
-      id: 3,
-      clienteId: 2,
-      clienteNome: 'Diego Sanches',
-      clienteTelefone: '(45) 99640-1183',
-      servicoId: 3,
-      servicoNome: 'Sobrancelha',
-      valor: 20,
-      duracaoMinutos: 20,
-      dataHora: `${hoje}T17:00`,
-      status: 'AGENDADO',
-      observacoes: null,
-    },
-  ];
-}

@@ -1,5 +1,5 @@
 import { CurrencyPipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -8,7 +8,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { map } from 'rxjs';
+import { Observable, map, of, switchMap } from 'rxjs';
 
 import { Agendamento, Horario } from '../../core/models/agendamento.model';
 import { ItemCarrinho, ItemServico } from '../../core/models/servico.model';
@@ -68,14 +68,17 @@ function quimicaCompleta(grupo: AbstractControl): ValidationErrors | null {
   templateUrl: './agendamento.component.html',
   styleUrl: './agendamento.component.scss',
 })
-export class AgendamentoComponent {
+export class AgendamentoComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly service = inject(AgendamentoService);
 
   protected readonly hoje = paraDataIso(new Date());
 
   protected readonly erro = signal<string | null>(null);
   protected readonly confirmado = signal<Agendamento | null>(null);
+  /** Trava o botão enquanto o POST está em voo, para não agendar em duplicata. */
+  protected readonly salvando = signal(false);
   /** Começa recolhida — é o campo menos usado da tela. */
   protected readonly mostrarObs = signal(false);
 
@@ -236,6 +239,10 @@ export class AgendamentoComponent {
 
   // ------------------------------------------------------------------ ações
 
+  ngOnInit(): void {
+    this.service.carregar();
+  }
+
   protected definirModoCliente(modo: 'existente' | 'novo'): void {
     this.form.patchValue({ modoCliente: modo });
   }
@@ -310,34 +317,48 @@ export class AgendamentoComponent {
       return;
     }
 
-    try {
-      const clienteId =
-        v.modoCliente === 'existente'
-          ? v.clienteId!
-          : this.service.criarCliente({
+    this.salvando.set(true);
+
+    // Cliente novo precisa existir no banco antes do agendamento apontar para ele.
+    const clienteId$: Observable<number> =
+      v.modoCliente === 'existente'
+        ? of(v.clienteId!)
+        : this.service
+            .criarCliente({
               nome: v.novoNome,
               email: v.novoEmail.trim() || null,
               telefone: v.novoTelefone,
-            }).id;
+            })
+            .pipe(map((cliente) => cliente.id));
 
-      const criado = this.service.criar(
-        {
-          clienteId,
-          servicoId: servico.id,
-          dataHora: paraDataHora(v.data, v.hora),
-          observacoes: v.observacoes,
+    clienteId$
+      .pipe(
+        switchMap((clienteId) =>
+          this.service.criar(
+            {
+              clienteId,
+              servicoId: servico.id,
+              dataHora: paraDataHora(v.data, v.hora),
+              observacoes: v.observacoes,
+            },
+            this.duracao(),
+          ),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (criado) => {
+          // Mantém o dia escolhido: o normal é agendar vários clientes seguidos.
+          this.form.reset({ modoCliente: 'existente', itens: [], data: v.data });
+          this.mostrarObs.set(false);
+          this.confirmado.set(criado);
+          this.salvando.set(false);
         },
-        this.duracao(),
-        this.total(),
-      );
-
-      // Mantém o dia escolhido: o normal é agendar vários clientes seguidos.
-      this.form.reset({ modoCliente: 'existente', itens: [], data: v.data });
-      this.mostrarObs.set(false);
-      this.confirmado.set(criado);
-    } catch (e) {
-      this.erro.set(e instanceof Error ? e.message : 'Não foi possível agendar.');
-    }
+        error: (e: unknown) => {
+          this.erro.set(e instanceof Error ? e.message : 'Não foi possível agendar.');
+          this.salvando.set(false);
+        },
+      });
   }
 
   // ------------------------------------------------------------- validação
