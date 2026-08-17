@@ -1,17 +1,9 @@
 package uniamerica.abarbeirados.repository;
 
-
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 import uniamerica.abarbeirados.entity.Agendamento;
-import uniamerica.abarbeirados.entity.StatusAgendamento;
 
-import java.util.List;
-import java.util.Optional;
-
-@Repository
 public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> {
-    List<Agendamento> findAllByStatus(StatusAgendamento status);
-
-    Optional<Agendamento> findByIdAndStatus(Long id, StatusAgendamento status);
+    // Filtro (busca/dia) e agrupamento por dia são feitos em memória no service por enquanto.
+    // Se a base de dados crescer, migrar para @Query com filtros no banco.
 }

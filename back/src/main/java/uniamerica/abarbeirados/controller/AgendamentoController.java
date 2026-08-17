@@ -2,68 +2,72 @@ package uniamerica.abarbeirados.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import uniamerica.abarbeirados.dto.agendamento.AgendaDoDiaResponse;
+import uniamerica.abarbeirados.dto.agendamento.AgendamentoRequest;
+import uniamerica.abarbeirados.dto.agendamento.AgendamentoResponse;
+import uniamerica.abarbeirados.dto.agendamento.AtualizarStatusRequest;
 import uniamerica.abarbeirados.entity.Agendamento;
-import uniamerica.abarbeirados.entity.StatusAgendamento;
+import uniamerica.abarbeirados.mapper.AgendamentoMapper;
 import uniamerica.abarbeirados.service.AgendamentoService;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/agendamento")
+@RequestMapping("/api/agendamentos")
 public class AgendamentoController {
+
     @Autowired
     private AgendamentoService agendamentoService;
 
     @PostMapping
-    public ResponseEntity<Agendamento> save(@Valid @RequestBody Agendamento agendamento) {
-        Agendamento save = agendamentoService.save(agendamento);
-        return ResponseEntity.status(HttpStatus.CREATED).body(save);
+    public ResponseEntity<AgendamentoResponse> save(@Valid @RequestBody AgendamentoRequest request) {
+        Agendamento saved = agendamentoService.save(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(AgendamentoMapper.toResponse(saved));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<AgendamentoResponse>> findAll(
+            @RequestParam(required = false) String busca,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dia) {
+
+        List<AgendamentoResponse> agendamentos = agendamentoService.findAll(busca, dia).stream()
+                .map(AgendamentoMapper::toResponse)
+                .toList();
+
+        return ResponseEntity.ok(agendamentos);
+    }
+
+    @GetMapping("/agenda")
+    public ResponseEntity<List<AgendaDoDiaResponse>> getAgenda() {
+        return ResponseEntity.ok(agendamentoService.getAgendaAgrupadaPorDia());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Agendamento> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<AgendamentoResponse> findById(@PathVariable Long id) {
         Agendamento agendamento = agendamentoService.findById(id);
-        if (agendamento == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(agendamento);
-    }
-
-    @GetMapping("/status/{status}")
-    public ResponseEntity<List<Agendamento>> findAllByStatus(@PathVariable StatusAgendamento status) {
-        return ResponseEntity.ok(agendamentoService.findAllByStatus(status));
+        return ResponseEntity.ok(AgendamentoMapper.toResponse(agendamento));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Agendamento> update(@PathVariable Long id, @Valid @RequestBody Agendamento agendamento) {
-        Agendamento updated = agendamentoService.updateAgendamento(id, agendamento);
-        if (updated == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(updated);
+    public ResponseEntity<AgendamentoResponse> update(@PathVariable Long id, @Valid @RequestBody AgendamentoRequest request) {
+        Agendamento updated = agendamentoService.update(id, request);
+        return ResponseEntity.ok(AgendamentoMapper.toResponse(updated));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<AgendamentoResponse> updateStatus(@PathVariable Long id, @Valid @RequestBody AtualizarStatusRequest request) {
+        Agendamento updated = agendamentoService.updateStatus(id, request);
+        return ResponseEntity.ok(AgendamentoMapper.toResponse(updated));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Agendamento> delet(@PathVariable Long id) {
-        boolean deleted = agendamentoService.deleteById(id);
-        if (deleted) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.noContent().build();
-    }
-
-    @DeleteMapping("/{id}/status/{status}")
-    public ResponseEntity<Void> deleteByidAndStatus(@PathVariable Long id, @PathVariable StatusAgendamento status) {
-        boolean deleted = agendamentoService.deleteByIdAndStatus(id, status);
-        if (deleted) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Void> deleteById(@PathVariable Long id) {
+        agendamentoService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 }
-
-
-

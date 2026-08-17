@@ -1,57 +1,34 @@
 package uniamerica.abarbeirados.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import uniamerica.abarbeirados.model.StatusAgendamento;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 
-@Getter
-@Setter
-@Entity
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "Agendamento")
+@Entity
+@Table(name = "agendamento")
 public class Agendamento {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Nome é obrigatório")
+    // TODO: quando Cliente/Servico estiverem prontos, trocar para Long clienteId / Long servicoId
+    // (ou @ManyToOne para as entidades Cliente e Servico do Cauã)
     private String nome;
-    @NotBlank(message = "Email é obrigatório")
-    @Email(message = "Email inválido")
     private String email;
-    @NotBlank(message = "Telefone é obrigatório")
     private String telefone;
-    @NotBlank(message = "Data é obrigatória")
-    private LocalDate dataCadastro;
-    @NotBlank(message = "Hora é obrigatória")
-    private LocalTime horaCadastro;
-    @NotBlank(message = "Serviço é obrigatório")
+
     private String servico;
+
+    private LocalDateTime dataHora;
+
     @Enumerated(EnumType.STRING)
-    @NotNull(message = "Status é obrigatório")
     private StatusAgendamento status;
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Agendamento)) return false;
-        Agendamento that = (Agendamento) o;
-        return id != null && id.equals(that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
-
 
 }

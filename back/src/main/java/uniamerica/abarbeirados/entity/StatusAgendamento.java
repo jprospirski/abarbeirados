@@ -1,9 +1,8 @@
 package uniamerica.abarbeirados.entity;
 
 public enum StatusAgendamento {
-    PENDENTE,
+    AGENDADO,
     CONFIRMADO,
-    CANCELADO,
-    CONCLUIDO
-
+    CONCLUIDO,
+    CANCELADO
 }
