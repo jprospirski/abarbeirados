@@ -1,0 +1,271 @@
+<section class="agenda">
+  <header class="agenda__topo">
+    <div class="agenda__id">
+      <p class="rotulo">01 Agenda</p>
+      <h1 class="agenda__titulo">Agendamentos</h1>
+    </div>
+
+    <div class="agenda__acoes">
+      @if (!ehEstreito()) {
+      <div class="alternador" role="group" aria-label="Modo de visualização">
+        <button
+          type="button"
+          class="alternador__op"
+          [class.is-ativo]="visao() === 'cartoes'"
+          [attr.aria-pressed]="visao() === 'cartoes'"
+          (click)="definirVisao('cartoes')"
+        >
+          Cartões
+        </button>
+        <button
+          type="button"
+          class="alternador__op"
+          [class.is-ativo]="visao() === 'lista'"
+          [attr.aria-pressed]="visao() === 'lista'"
+          (click)="definirVisao('lista')"
+        >
+          Lista
+        </button>
+        <button
+          type="button"
+          class="alternador__op"
+          [class.is-ativo]="visao() === 'colunas'"
+          [attr.aria-pressed]="visao() === 'colunas'"
+          (click)="definirVisao('colunas')"
+        >
+          Colunas
+        </button>
+      </div>
+      }
+
+      <input
+        type="search"
+        class="campo__entrada agenda__busca"
+        placeholder="Cliente ou serviço"
+        aria-label="Pesquisar por cliente ou serviço"
+        (input)="atualizarBusca($event)"
+      />
+
+      <a class="botao-secundario" routerLink="/agendamentos/novo">Novo</a>
+    </div>
+  </header>
+
+  <hr class="regua" />
+
+  <!-- ================================================== filtro por dia -->
+  <div class="filtro">
+    <div class="filtro__topo">
+      <h2 class="rotulo">Filtrar por dia</h2>
+
+      <div class="filtro__controles">
+        <button
+          type="button"
+          class="botao-secundario"
+          [class.is-ativo]="diaSelecionado() === hoje"
+          [attr.aria-pressed]="diaSelecionado() === hoje"
+          (click)="irParaHoje()"
+        >
+          Hoje
+        </button>
+        <button
+          type="button"
+          class="botao-secundario"
+          [class.is-ativo]="!diaSelecionado()"
+          [attr.aria-pressed]="!diaSelecionado()"
+          (click)="limparDia()"
+        >
+          Todos os dias
+        </button>
+      </div>
+
+      <span class="filtro__mes">{{ tituloMes() }}</span>
+    </div>
+
+    <div class="semana">
+      <button
+        type="button"
+        class="semana__seta"
+        (click)="semanaAnterior()"
+        aria-label="Semana anterior"
+      >
+        &lsaquo;
+      </button>
+
+      <div class="semana__dias">
+        @for (dia of semana(); track dia.iso) {
+          <button
+            type="button"
+            class="dia"
+            [class.is-ativo]="diaSelecionado() === dia.iso"
+            [class.is-hoje]="dia.hoje"
+            [attr.aria-pressed]="diaSelecionado() === dia.iso"
+            (click)="selecionarDia(dia.iso)"
+          >
+            <span class="dia__rotulo">{{ dia.rotulo }}</span>
+            <strong class="dia__num">{{ dia.numero }}</strong>
+            <span class="dia__mes">{{ dia.mes }}</span>
+            <span class="dia__conta" [class.is-vazio]="dia.total === 0">
+              {{ dia.total }}
+            </span>
+          </button>
+        }
+      </div>
+
+      <button
+        type="button"
+        class="semana__seta"
+        (click)="semanaSeguinte()"
+        aria-label="Próxima semana"
+      >
+        &rsaquo;
+      </button>
+    </div>
+  </div>
+
+  @if (service.erroCarga(); as falha) {
+    <p class="alerta alerta--erro" role="alert">{{ falha }}</p>
+  } @else if (service.carregando()) {
+    <p class="agenda__estado">Carregando agendamentos...</p>
+  } @else if (agendamentos().length === 0) {
+    <p class="agenda__estado">
+      {{
+        diaSelecionado()
+          ? 'Nenhum agendamento neste dia.'
+          : 'Nenhum agendamento encontrado.'
+      }}
+    </p>
+  } @else {
+    <p class="agenda__meta">
+      {{ resumo().total }} {{ resumo().total === 1 ? 'agendamento' : 'agendamentos' }}
+      <span class="agenda__ponto" aria-hidden="true"></span>
+      {{ resumo().ativos }} em aberto
+      @if (diaSelecionado()) {
+        <span class="agenda__ponto" aria-hidden="true"></span>
+        <span class="agenda__recorte">Dia filtrado</span>
+      }
+    </p>
+
+    @if (erro()) {
+      <p class="alerta alerta--erro" role="alert">{{ erro() }}</p>
+    }
+
+    <!-- ===================================================== cartões -->
+    @if (visaoEfetiva() === 'cartoes') {
+      <ul class="cartoes">
+        @for (a of agendamentos(); track a.id) {
+          <li class="cartao" [class.is-cancelado]="a.status === 'CANCELADO'">
+            <div class="cartao__topo">
+              <span class="cartao__quando">
+                <strong>{{ a.hora }}</strong>
+                <span class="cartao__dia">{{ a.dia }}</span>
+              </span>
+              <span class="cartao__num">#{{ a.id }}</span>
+            </div>
+
+            <h2 class="cartao__nome">{{ a.clienteNome }}</h2>
+            <p class="cartao__servico">{{ a.servicoNome }}</p>
+
+            @if (a.observacoes) {
+              <p class="cartao__obs">{{ a.observacoes }}</p>
+            }
+
+            <div class="cartao__rodape">
+              <span class="cartao__valor">{{ a.valor | currency: 'BRL' }}</span>
+              <select
+                class="estado"
+                [class]="'estado estado--' + a.status.toLowerCase()"
+                [value]="a.status"
+                [disabled]="salvandoId() === a.id"
+                [attr.aria-label]="'Status de ' + a.clienteNome"
+                (change)="mudarStatus(a, $event)"
+              >
+                @for (s of STATUS; track s) {
+                  <option [value]="s">{{ STATUS_LABEL[s] }}</option>
+                }
+              </select>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+
+    <!-- ======================================================= lista -->
+    @if (visaoEfetiva() === 'lista') {
+      <div class="tabela">
+        <div class="tabela__cabecalho" aria-hidden="true">
+          <span>Quando</span>
+          <span>Cliente</span>
+          <span>Serviço</span>
+          <span>Valor</span>
+          <span>Status</span>
+        </div>
+
+        @for (a of agendamentos(); track a.id) {
+          <div class="tabela__linha" [class.is-cancelado]="a.status === 'CANCELADO'">
+            <span class="tabela__quando">
+              <strong>{{ a.hora }}</strong>
+              <span class="tabela__dia">{{ a.dia }}</span>
+            </span>
+            <span class="tabela__cliente">
+              {{ a.clienteNome }}
+              <span class="tabela__telefone">{{ a.clienteTelefone }}</span>
+            </span>
+            <span>{{ a.servicoNome }}</span>
+            <span class="tabela__valor">{{ a.valor | currency: 'BRL' }}</span>
+            <select
+              [class]="'estado estado--' + a.status.toLowerCase()"
+              [value]="a.status"
+              [disabled]="salvandoId() === a.id"
+              [attr.aria-label]="'Status de ' + a.clienteNome"
+              (change)="mudarStatus(a, $event)"
+            >
+              @for (s of STATUS; track s) {
+                <option [value]="s">{{ STATUS_LABEL[s] }}</option>
+              }
+            </select>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ===================================================== colunas -->
+    @if (visaoEfetiva() === 'colunas') {
+      <div class="quadro">
+        @for (coluna of porStatus(); track coluna.status) {
+          <section class="coluna">
+            <header class="coluna__topo">
+              <h2 class="rotulo">{{ coluna.rotulo }}</h2>
+              <span class="coluna__conta">{{ coluna.itens.length }}</span>
+            </header>
+
+            <div class="coluna__corpo">
+              @for (a of coluna.itens; track a.id) {
+                <article class="ficha">
+                  <div class="ficha__topo">
+                    <strong>{{ a.hora }}</strong>
+                    <span class="ficha__dia">{{ a.dia }}</span>
+                  </div>
+                  <p class="ficha__nome">{{ a.clienteNome }}</p>
+                  <p class="ficha__servico">{{ a.servicoNome }}</p>
+                  <select
+                    class="estado estado--mover"
+                    [value]="a.status"
+                    [disabled]="salvandoId() === a.id"
+                    [attr.aria-label]="'Mover ' + a.clienteNome + ' para outro status'"
+                    (change)="mudarStatus(a, $event)"
+                  >
+                    @for (s of STATUS; track s) {
+                      <option [value]="s">{{ STATUS_LABEL[s] }}</option>
+                    }
+                  </select>
+                </article>
+              } @empty {
+                <p class="coluna__vazia">Nenhum</p>
+              }
+            </div>
+          </section>
+        }
+      </div>
+    }
+  }
+</section>

@@ -1,0 +1,627 @@
+/* =============================================================================
+   Agenda — a mesma lista em três formas: cartões, lista e colunas.
+
+   Vale a regra do kit: o raio fica na silhueta do grupo e as divisórias internas
+   ficam retas. Na lista e nas colunas é o `overflow: hidden` que recorta as
+   linhas contra o canto arredondado.
+   ========================================================================== */
+
+/* Sem trava de largura: o conteúdo ocupa a área toda que sobra da lateral. Com
+   um max-width e sem centragem, tudo encostava à esquerda e deixava um vão morto
+   à direita em telas largas. */
+.agenda {
+  padding: 22px 24px 48px;
+}
+
+.agenda__topo {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.agenda__titulo {
+  margin-top: 6px;
+  font-size: 2rem;
+}
+
+.agenda__acoes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.agenda__busca {
+  width: 208px;
+}
+
+.agenda__meta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin: 14px 0 18px;
+  color: var(--cor-texto-fraco);
+  font-family: var(--fonte-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.agenda__ponto {
+  width: 3px;
+  height: 3px;
+  background: currentcolor;
+}
+
+.agenda__estado {
+  margin-top: 20px;
+  color: var(--cor-texto-suave);
+  font-size: 14px;
+}
+
+.agenda__recorte {
+  color: var(--cor-marca);
+}
+
+/* ============================================================== filtro ==
+
+   A faixa de dias vem do kit (styles.scss). O que mora aqui é só o que é
+   próprio do filtro: o cabeçalho da faixa e a contagem dentro de cada dia.
+   ======================================================================== */
+
+.filtro {
+  margin: 18px 0 4px;
+}
+
+/* Três zonas: rótulo à esquerda, botões ao centro, mês à direita. As colunas das
+   pontas têm a mesma fração, então o miolo fica centrado na linha inteira e não
+   entre os vizinhos — que é o que aconteceria com um space-between. */
+.filtro__topo {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.filtro__controles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filtro__mes {
+  justify-self: end;
+  color: var(--cor-marca);
+  font-family: var(--fonte-display);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+/* Contagem do dia: campo chapado, como o resto da linguagem. Fica em fio
+   apagado quando o dia está vazio, para o cheio saltar sem precisar de cor. */
+.dia__conta {
+  min-width: 17px;
+  padding: 1px 4px;
+  border-radius: var(--raio-minimo);
+  background: var(--cor-marca-fundo);
+  color: var(--cor-marca);
+  font-family: var(--fonte-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+
+  &.is-vazio {
+    background: transparent;
+    color: var(--cor-texto-fraco);
+  }
+}
+
+/* No dia selecionado o campo dourado já é o fundo do botão, então a contagem
+   inverte para não sumir dentro dele. */
+.dia.is-ativo .dia__conta {
+  background: var(--cor-sobre-marca);
+  color: var(--cor-marca-cheia);
+
+  &.is-vazio {
+    background: transparent;
+    color: var(--cor-sobre-marca);
+  }
+}
+
+/* =============================================================== estado ==
+
+   O seletor de status aparece nas três visões, então a forma mora aqui uma vez
+   só. Campo chapado por status, sem degradê, como manda a linguagem.
+   ======================================================================== */
+
+.estado {
+  padding: 4px 8px;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-minimo);
+  background: transparent;
+  color: var(--cor-texto-suave);
+  font-family: var(--fonte-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease;
+
+  &:disabled {
+    cursor: progress;
+    opacity: 0.5;
+  }
+
+  &--agendado {
+    border-color: transparent;
+    background: var(--cor-marca-fundo);
+    color: var(--cor-marca);
+  }
+
+  &--confirmado {
+    border-color: transparent;
+    background: var(--cor-ok-fundo);
+    color: var(--cor-ok-texto);
+  }
+
+  &--concluido {
+    border-color: transparent;
+    background: var(--cor-superficie-alta);
+    color: var(--cor-texto-suave);
+  }
+
+  &--cancelado {
+    border-color: transparent;
+    background: var(--cor-perigo-fundo);
+    color: var(--cor-perigo-texto);
+  }
+}
+
+/* ============================================================== cartões == */
+
+.cartoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cartao {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease;
+
+  &:hover {
+    border-color: var(--cor-borda-forte);
+    background: var(--cor-superficie-alta);
+  }
+
+  /* Cancelado recua sem sumir: ainda precisa ser lido e reativado. */
+  &.is-cancelado {
+    background: transparent;
+
+    .cartao__nome,
+    .cartao__valor {
+      color: var(--cor-texto-fraco);
+    }
+  }
+}
+
+.cartao__topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* Hora como número grande, que é o dado pelo qual a agenda é lida. */
+.cartao__quando {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+
+  strong {
+    color: var(--cor-texto);
+    font-family: var(--fonte-display);
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+}
+
+.cartao__dia,
+.cartao__num {
+  color: var(--cor-texto-fraco);
+  font-family: var(--fonte-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.cartao__nome {
+  margin-top: 10px;
+  font-size: 0.95rem;
+  line-height: 1.15;
+}
+
+.cartao__servico {
+  margin-top: 4px;
+  color: var(--cor-texto-suave);
+  font-size: 13px;
+}
+
+.cartao__obs {
+  margin-top: 8px;
+  padding-left: 9px;
+  border-left: 2px solid var(--cor-borda-forte);
+  color: var(--cor-texto-fraco);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.cartao__rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.cartao__valor {
+  color: var(--cor-marca);
+  font-family: var(--fonte-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+/* ================================================================ lista == */
+
+.tabela {
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+  overflow: hidden;
+}
+
+.tabela__cabecalho,
+.tabela__linha {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1.4fr) minmax(0, 1.4fr) 96px 116px;
+  gap: 14px;
+  align-items: center;
+  padding: 11px 16px;
+}
+
+.tabela__cabecalho {
+  border-bottom: 1px solid var(--cor-borda);
+  color: var(--cor-texto-fraco);
+  font-family: var(--fonte-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.tabela__linha {
+  font-size: 13.5px;
+  transition: background 0.12s ease;
+
+  &+& {
+    border-top: 1px solid var(--cor-borda);
+  }
+
+  &:hover {
+    background: var(--cor-superficie-alta);
+  }
+
+  &.is-cancelado {
+    color: var(--cor-texto-fraco);
+  }
+}
+
+.tabela__quando {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+
+  strong {
+    font-family: var(--fonte-mono);
+    font-size: 13px;
+    font-weight: 600;
+  }
+}
+
+.tabela__dia,
+.tabela__telefone {
+  color: var(--cor-texto-fraco);
+  font-family: var(--fonte-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.tabela__cliente {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.tabela__valor {
+  font-family: var(--fonte-mono);
+  font-size: 12.5px;
+}
+
+/* ============================================================== colunas == */
+
+.quadro {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.coluna {
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+  overflow: hidden;
+}
+
+.coluna__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.coluna__conta {
+  color: var(--cor-texto-fraco);
+  font-family: var(--fonte-mono);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.coluna__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+}
+
+.coluna__vazia {
+  padding: 8px 4px;
+  color: var(--cor-texto-fraco);
+  font-family: var(--fonte-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Aqui o raio desce para a peça: a quantidade varia e o grupo não tem retângulo
+   para arredondar, então os blocos viram fichas soltas. */
+.ficha {
+  padding: 10px 11px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-pequeno);
+  background: var(--cor-fundo);
+}
+
+.ficha__topo {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+
+  strong {
+    font-family: var(--fonte-mono);
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+}
+
+.ficha__dia {
+  color: var(--cor-texto-fraco);
+  font-family: var(--fonte-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+}
+
+.ficha__nome {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.ficha__servico {
+  margin-top: 2px;
+  color: var(--cor-texto-suave);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.estado--mover {
+  width: 100%;
+  margin-top: 9px;
+}
+
+/* Abaixo de 1100px o quadro de 4 colunas não cabe: vira 2 x 2. */
+@media (max-width: 1100px) {
+  .quadro {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /*
+   * Os sete dias continuam dividindo a faixa, mas o conteúdo da célula empilha.
+   * Em linha, `dom 16 ago 2` não cabe na célula estreita: os rótulos vazavam por
+   * cima do vizinho e a contagem colidia com o dia seguinte.
+   */
+  .dia {
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 9px 4px;
+  }
+
+  /* As três zonas não cabem lado a lado. Rótulo e mês dividem a primeira linha,
+     e os botões descem para a segunda — ainda centrados. */
+  .filtro__topo {
+    grid-template-columns: 1fr auto;
+    row-gap: 10px;
+  }
+
+  .filtro__mes {
+    grid-area: 1 / 2;
+  }
+
+  .filtro__controles {
+    grid-area: 2 / 1 / 3 / 3;
+    justify-self: center;
+    flex-wrap: wrap;
+  }
+
+  .tabela__cabecalho,
+  .tabela__linha {
+    grid-template-columns: 78px minmax(0, 1.4fr) minmax(0, 1fr) 116px;
+  }
+
+  .tabela__cabecalho span:nth-child(4),
+  .tabela__linha .tabela__valor {
+    display: none;
+  }
+}
+
+/* =========================================================== responsivo ==
+
+   Abaixo de 720px a tela é de celular: só a visão de cartões existe (o
+   alternador some do DOM, ver ehEstreito no componente), tudo empilha em uma
+   coluna e a faixa de dias vira uma tira rolável com encaixe.
+   ======================================================================== */
+
+@media (max-width: 720px) {
+  .agenda {
+    padding: 16px 14px 40px;
+  }
+
+  .agenda__topo {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    margin-bottom: 12px;
+  }
+
+  .agenda__titulo {
+    font-size: 1.6rem;
+  }
+
+  /* Busca ocupa a linha e o "Novo" fica do lado, sem quebrar. */
+  .agenda__acoes {
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+
+  .agenda__busca {
+    width: auto;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .agenda__acoes .botao-secundario {
+    flex: none;
+  }
+
+  /* Rótulo em cima, botões dividindo a linha de baixo. */
+  .filtro__topo {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 10px;
+  }
+
+  .filtro__mes {
+    grid-area: 1 / 2;
+    font-size: 1rem;
+  }
+
+  .filtro__controles {
+    grid-area: 2 / 1 / 3 / 3;
+    justify-self: stretch;
+  }
+
+  .filtro__controles .botao-secundario {
+    flex: 1;
+    justify-content: center;
+    padding: 12px 10px;
+  }
+
+  /* A tira rola com o dedo e cada dia encaixa no lugar ao soltar. */
+  .semana__dias {
+    grid-template-columns: repeat(7, 88px);
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .dia {
+    scroll-snap-align: center;
+    /* Empilha para caber nos 88px sem espremer a contagem. */
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 9px 4px;
+  }
+
+  .cartoes {
+    grid-template-columns: 1fr;
+  }
+
+  /* Alvos de toque maiores no seletor de status. */
+  .estado {
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 400px) {
+  .agenda {
+    padding: 14px 12px 36px;
+  }
+
+  .agenda__titulo {
+    font-size: 1.42rem;
+  }
+
+  .cartao__rodape {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .estado {
+    width: 100%;
+  }
+}
