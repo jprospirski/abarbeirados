@@ -7,7 +7,6 @@ public record ClienteRequest(
         @NotBlank(message = "O nome é obrigatório")
         String nome,
         @Email(message = "O email deve ser válido")
-        @NotBlank(message = "O email é obrigatório")
         String email,
         @NotBlank(message = "O telefone é obrigatório")
         String telefone
