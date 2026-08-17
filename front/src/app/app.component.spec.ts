@@ -1,51 +1,29 @@
-import { DecimalPipe } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { Component, inject, OnInit } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
-interface Servico {
-  id: number;
-  nome: string;
-  valor: number;
-  duracaoMinutos: number;
-  ativo: boolean;
-}
+import { AppComponent } from './app.component';
+import { routes } from './app.routes';
 
-@Component({
-  selector: 'app-root',
-  imports: [DecimalPipe],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.scss'
-})
-export class AppComponent implements OnInit {
-  private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:8080/api/servicos';
+describe('AppComponent', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [AppComponent],
+      providers: [provideRouter(routes)],
+    }).compileComponents();
+  });
 
-  servicos: Servico[] = [];
-  busca = '';
-  carregando = true;
-  erro = '';
+  it('deve ser criado', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    expect(fixture.componentInstance).toBeTruthy();
+  });
 
-  get servicosFiltrados(): Servico[] {
-    const termo = this.busca.trim().toLowerCase();
-    return termo
-      ? this.servicos.filter((servico) => servico.nome.toLowerCase().includes(termo))
-      : this.servicos;
-  }
+  it('deve exibir a marca na barra lateral', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
 
-  ngOnInit(): void {
-    this.http.get<Servico[]>(this.apiUrl).subscribe({
-      next: (servicos) => {
-        this.servicos = servicos;
-        this.carregando = false;
-      },
-      error: () => {
-        this.erro = 'Não foi possível carregar os serviços.';
-        this.carregando = false;
-      }
-    });
-  }
-
-  atualizarBusca(event: Event): void {
-    this.busca = (event.target as HTMLInputElement).value;
-  }
-}
+    const elemento = fixture.nativeElement as HTMLElement;
+    expect(elemento.querySelector('.lateral__nome')?.textContent).toContain(
+      'Abarbeirados',
+    );
+  });
+});

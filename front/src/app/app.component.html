@@ -1,24 +1,71 @@
-<main class="pagina">
-  <header>
-    <h1>Serviços</h1>
-    <input type="search" placeholder="Pesquisar serviço" aria-label="Pesquisar serviço" (input)="atualizarBusca($event)" />
-  </header>
+<aside class="lateral">
+  <div class="lateral__marca">
+    <!-- Poste de barbearia. -->
+    <svg class="sigla" viewBox="0 0 24 24" aria-hidden="true">
+      <defs>
+        <clipPath id="poste">
+          <rect x="8" y="6" width="8" height="12" />
+        </clipPath>
+      </defs>
+      <rect x="6.5" y="2" width="11" height="3.4" rx="1.2" fill="currentColor" />
+      <rect x="6.5" y="18.6" width="11" height="3.4" rx="1.2" fill="currentColor" />
+      <rect x="8" y="6" width="8" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="1.2" />
+      <g clip-path="url(#poste)" stroke="currentColor" stroke-width="2.2">
+        <path d="M4 14 L14 4" />
+        <path d="M4 19 L19 4" />
+        <path d="M9 21 L21 9" />
+      </g>
+    </svg>
 
-  @if (carregando) {
-  <p>Carregando serviços...</p>
-  } @else if (erro) {
-  <p class="mensagem-erro">{{ erro }}</p>
-  } @else if (servicosFiltrados.length === 0) {
-  <p>Nenhum serviço encontrado.</p>
-  } @else {
-  <section class="lista-cards" aria-label="Lista de serviços">
-    @for (servico of servicosFiltrados; track servico.id) {
-    <article class="card">
-      <h2>{{ servico.nome }}</h2>
-      <p>R$ {{ servico.valor | number:'1.2-2' }}</p>
-      <small>{{ servico.duracaoMinutos }} min</small>
-    </article>
-    }
-  </section>
-  }
+    <div class="lateral__id">
+      <p class="lateral__nome">{{ nome }}</p>
+      <p class="lateral__papel">Gestão de barbearia</p>
+    </div>
+  </div>
+
+  <hr class="regua" />
+
+  <nav class="nav">
+    <a class="nav__item is-ativo" routerLink="/agendamentos" routerLinkActive="is-ativo">
+      <span class="nav__num">01</span>
+      <span class="nav__texto">Agendamentos</span>
+      <i class="nav__ponto" aria-hidden="true"></i>
+    </a>
+    <span class="nav__item is-futuro" title="Tela em desenvolvimento">
+      <span class="nav__num">02</span>
+      <span class="nav__texto">Clientes</span>
+    </span>
+  </nav>
+
+  <div class="lateral__base">
+    <div class="tema" role="group" aria-label="Tema da interface">
+      <button
+        type="button"
+        class="tema__op"
+        [class.is-ativo]="tema.tema() === 'escuro'"
+        [attr.aria-pressed]="tema.tema() === 'escuro'"
+        (click)="tema.definir('escuro')"
+      >
+        Escuro
+      </button>
+      <button
+        type="button"
+        class="tema__op"
+        [class.is-ativo]="tema.tema() === 'claro'"
+        [attr.aria-pressed]="tema.tema() === 'claro'"
+        (click)="tema.definir('claro')"
+      >
+        Claro
+      </button>
+    </div>
+
+    <footer class="lateral__rodape">
+      <p>Uniamerica &middot; 4º período</p>
+      <p>Projeto acadêmico 2026</p>
+    </footer>
+  </div>
+</aside>
+
+<main class="conteudo">
+  <router-outlet />
 </main>
