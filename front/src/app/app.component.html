@@ -26,15 +26,21 @@
   <hr class="regua" />
 
   <nav class="nav">
-    <a class="nav__item is-ativo" routerLink="/agendamentos" routerLinkActive="is-ativo">
+    <a
+      class="nav__item"
+      routerLink="/agendamentos"
+      routerLinkActive="is-ativo"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
       <span class="nav__num">01</span>
       <span class="nav__texto">Agendamentos</span>
       <i class="nav__ponto" aria-hidden="true"></i>
     </a>
-    <span class="nav__item is-futuro" title="Tela em desenvolvimento">
+    <a class="nav__item" routerLink="/agendamentos/novo" routerLinkActive="is-ativo">
       <span class="nav__num">02</span>
-      <span class="nav__texto">Clientes</span>
-    </span>
+      <span class="nav__texto">Novo agendamento</span>
+      <i class="nav__ponto" aria-hidden="true"></i>
+    </a>
   </nav>
 
   <div class="lateral__base">

@@ -6,10 +6,15 @@ export const routes: Routes = [
     path: 'agendamentos',
     title: 'Agendamentos | Abarbeirados',
     loadComponent: () =>
+      import('./features/agenda/agenda.component').then((m) => m.AgendaComponent),
+  },
+  {
+    path: 'agendamentos/novo',
+    title: 'Novo agendamento | Abarbeirados',
+    loadComponent: () =>
       import('./features/agendamento/agendamento.component').then(
         (m) => m.AgendamentoComponent,
       ),
   },
-  // TODO: rota 'clientes' — a segunda tela da entrega, ainda não desenvolvida.
   { path: '**', redirectTo: 'agendamentos' },
 ];

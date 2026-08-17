@@ -302,6 +302,170 @@ textarea {
     background: var(--cor-marca-fundo);
     color: var(--cor-marca);
   }
+
+  /* Depois do :hover de propósito — botão marcado continua marcado sob o mouse.
+     Mesmo campo chapado do alternador, para os dois lerem como um estado só. */
+  &.is-ativo {
+    border-color: transparent;
+    background: var(--cor-marca-cheia);
+    color: var(--cor-sobre-marca);
+    font-weight: 600;
+  }
+}
+
+/**
+ * Alternador de duas ou mais opções contíguas. Segue a regra do raio: a
+ * silhueta arredonda, as divisórias internas ficam retas.
+ */
+.alternador {
+  display: inline-flex;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-pequeno);
+  overflow: hidden;
+}
+
+.alternador__op {
+  padding: 5px 13px;
+  border: 0;
+  background: transparent;
+  color: var(--cor-texto-suave);
+  font-family: var(--fonte-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+
+  &+& {
+    border-left: 1px solid var(--cor-borda-forte);
+  }
+
+  &:hover {
+    color: var(--cor-texto);
+  }
+
+  &.is-ativo {
+    background: var(--cor-marca-cheia);
+    color: var(--cor-sobre-marca);
+    font-weight: 600;
+  }
+}
+
+/* =============================================================================
+   Faixa de dias da semana.
+
+   Usada para escolher a data no formulário e para filtrar a agenda por dia. Só
+   as pontas da faixa arredondam; os sete dias do meio ficam retos, seguindo a
+   regra do raio na silhueta.
+   ========================================================================== */
+
+.semana {
+  display: flex;
+  align-items: stretch;
+}
+
+.semana__seta {
+  flex: none;
+  width: 32px;
+  border: 1px solid var(--cor-borda-forte);
+  background: var(--cor-fundo);
+  color: var(--cor-texto-suave);
+  font-size: 18px;
+  line-height: 1;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+
+  &:first-child {
+    border-radius: var(--raio-medio) 0 0 var(--raio-medio);
+  }
+
+  &:last-child {
+    border-radius: 0 var(--raio-medio) var(--raio-medio) 0;
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--cor-marca-cheia);
+    color: var(--cor-sobre-marca);
+  }
+
+  &:disabled {
+    color: var(--cor-borda-forte);
+    cursor: not-allowed;
+  }
+}
+
+/* `min-width: 0` é o que impede a faixa de empurrar a página: sem ele o item
+   flex assume a largura do conteúdo e a rolagem lateral vaza para o body. */
+.semana__dias {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+  border-block: 1px solid var(--cor-borda-forte);
+  background: var(--cor-borda-forte);
+}
+
+.dia {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 5px;
+  padding: 12px 4px;
+  border: 0;
+  background: var(--cor-fundo);
+  white-space: nowrap;
+  transition: background 0.12s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--cor-superficie-alta);
+  }
+
+  &.is-ativo {
+    background: var(--cor-marca-cheia);
+
+    .dia__rotulo,
+    .dia__mes,
+    .dia__num {
+      color: var(--cor-sobre-marca);
+    }
+  }
+
+  /* Hoje ganha um traço na base enquanto não está selecionado. */
+  &.is-hoje:not(.is-ativo) {
+    box-shadow: inset 0 -2px 0 var(--cor-marca);
+  }
+
+  /* Dia que já passou ou lotou continua na faixa, só apagado. O traço de hoje
+     sai daqui para não competir com os dias que ainda dá para reservar. */
+  &:disabled {
+    cursor: not-allowed;
+    box-shadow: none;
+
+    .dia__rotulo,
+    .dia__mes,
+    .dia__num {
+      color: var(--cor-texto-fraco);
+      font-weight: 400;
+    }
+  }
+}
+
+.dia__rotulo,
+.dia__mes {
+  color: var(--cor-texto-suave);
+  font-family: var(--fonte-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+}
+
+.dia__num {
+  font-family: var(--fonte-display);
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 .aviso {
