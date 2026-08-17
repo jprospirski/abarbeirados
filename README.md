@@ -14,8 +14,8 @@ regras de negócio seguem em aberto — o desenvolvimento avança sobre o domín
 
 | Frente | Situação |
 |---|---|
-| Backend (Spring Boot) | Estrutura inicial criada |
-| Frontend (Angular) | Não iniciado |
+| Backend (Spring Boot) | CRUD de Cliente e Serviço concluído; Agendamento pendente |
+| Frontend (Angular) | Tela de agendamento implementada; listagem pendente |
 | Banco de dados | H2 em memória (provisório) → PostgreSQL 18 |
 | Especificação do demandante | Pendente |
 
@@ -126,7 +126,10 @@ Exemplo: `feat: adiciona endpoint de listagem de clientes`
 - [ ] Implementar DTOs como `record`
 - [ ] Implementar o CRUD e os 6 endpoints
 - [ ] Migrar de H2 para PostgreSQL 18
-- [ ] Inicializar o frontend Angular 19
+- [x] Inicializar o frontend Angular 19
+- [x] Tela de agendamento (frontend)
+- [ ] Tela de listagem (frontend)
+- [ ] Implementar o domínio Agendamento no backend e ligar a tela à API
 
 ---
 
