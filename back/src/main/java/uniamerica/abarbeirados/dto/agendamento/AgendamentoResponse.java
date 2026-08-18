@@ -1,20 +1,27 @@
 package uniamerica.abarbeirados.dto.agendamento;
 
-import lombok.NoArgsConstructor;
-import uniamerica.abarbeirados.entity.StatusAgendamento;
+import uniamerica.abarbeirados.model.StatusAgendamento;
 
-import java.time.LocalDate;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
-
+/**
+ * Retorno de /api/agendamentos.
+ *
+ * Traz cliente e servico ja resolvidos para a tela nao precisar de uma segunda
+ * requisicao so para descobrir o nome de quem esta agendado.
+ */
 public record AgendamentoResponse(
         Long id,
-        String nome,
-        String email,
-        String telefone,
+        Long clienteId,
+        String clienteNome,
+        String clienteTelefone,
+        Long servicoId,
+        String servicoNome,
+        BigDecimal valor,
+        Integer duracaoMinutos,
         LocalDateTime dataHora,
-        String servico,
-        StatusAgendamento status
-){
+        StatusAgendamento status,
+        String observacoes
+) {
 }

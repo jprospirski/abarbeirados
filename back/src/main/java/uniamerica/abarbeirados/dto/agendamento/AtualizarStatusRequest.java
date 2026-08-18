@@ -1,18 +1,12 @@
 package uniamerica.abarbeirados.dto.agendamento;
 
 import jakarta.validation.constraints.NotNull;
-import uniamerica.abarbeirados.entity.StatusAgendamento;
+import uniamerica.abarbeirados.model.StatusAgendamento;
 
-public class AtualizarStatusRequest {
+/** Corpo do PATCH de /api/agendamentos/{id}/status. */
+public record AtualizarStatusRequest(
 
-        @NotNull(message = "Status é obrigatório")
-        private StatusAgendamento status;
-
-        public StatusAgendamento getStatus() {
-                return status;
-        }
-
-        public void setStatus(StatusAgendamento status) {
-                this.status = status;
-        }
+        @NotNull(message = "O status é obrigatório")
+        StatusAgendamento status
+) {
 }
