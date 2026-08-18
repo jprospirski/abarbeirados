@@ -1,1 +1,500 @@
-/* You can add global styles to this file, and also import other style files */
+/* =============================================================================
+   Abarbeirados — estilos globais
+
+   A linguagem visual é suíça/brutalista editorial. O que vale para a interface
+   inteira: separação por fio de 1px em vez de espaço vazio, rótulos em mono
+   caixa alta com entreletra aberta, números grandes como elemento gráfico e cor
+   sempre em campo chapado, nunca em degradê.
+
+   Toda cor mora aqui como variável. O TemaService escreve `data-tema` no <html>
+   e o bloco claro redefine as mesmas variáveis — por isso nenhum componente
+   precisa saber qual tema está ativo.
+
+   A marca tem dois tokens, e não um: `--cor-marca` para texto e fio,
+   `--cor-marca-cheia` para preenchimento. No escuro são a mesma cor. No claro
+   precisam divergir, porque um dourado legível como texto sobre branco fica
+   escuro demais para ser um bom campo — e um campo bonito fica claro demais
+   para ler.
+   ========================================================================== */
+
+:root,
+:root[data-tema='escuro'] {
+  /* Superficies — da mais escura (lateral) para a mais clara (resumo) */
+  --cor-lateral: #0b0a09;
+  --cor-fundo: #131110;
+  --cor-superficie: #1a1613;
+  --cor-superficie-alta: #221d18;
+
+  /* Fios */
+  --cor-borda: #2e2822;
+  --cor-borda-forte: #443a2d;
+
+  /* Texto */
+  --cor-texto: #f2ede4;
+  --cor-texto-suave: #a2947f;
+  --cor-texto-fraco: #6e6355;
+
+  /* Marca */
+  --cor-marca: #d9a441;
+  --cor-marca-cheia: #d9a441;
+  --cor-marca-cheia-hover: #efc069;
+  --cor-marca-fundo: rgb(217 164 65 / 12%);
+  --cor-sobre-marca: #17130e;
+
+  /* Semanticas */
+  --cor-ok: #7ba87f;
+  --cor-sobre-ok: #10190f;
+  --cor-ok-texto: #a3c9a6;
+  --cor-ok-fundo: rgb(123 168 127 / 12%);
+  --cor-perigo: #c25b4e;
+  --cor-perigo-texto: #e39b90;
+  --cor-perigo-fundo: rgb(194 91 78 / 10%);
+  --cor-perigo-tenue: rgb(194 91 78 / 6%);
+
+  color-scheme: dark;
+}
+
+/* -----------------------------------------------------------------------------
+   Tema claro.
+
+   As três zonas são escalonadas em luminância para a estrutura não virar bege
+   sobre bege, que era o problema da primeira versão: lateral em areia (a mais
+   escura), conteúdo em papel, painéis quase brancos. Os neutros levaram uma
+   puxada para longe do amarelo, senão o papel lê como pergaminho.
+-------------------------------------------------------------------------------- */
+:root[data-tema='claro'] {
+  --cor-lateral: #e6e0d2;
+  --cor-fundo: #edeae1;
+  --cor-superficie: #fbf9f5;
+  --cor-superficie-alta: #ffffff;
+
+  --cor-borda: #e1dcd1;
+  --cor-borda-forte: #c9c2b4;
+
+  --cor-texto: #1a1712;
+  --cor-texto-suave: #5e5648;
+  --cor-texto-fraco: #8a8274;
+
+  /* Cobre em vez de dourado: precisa passar também sobre a areia da lateral,
+     que é a superfície clara mais escura. */
+  --cor-marca: #9c4708;
+  --cor-marca-cheia: #c97a18;
+  /* Clareia no hover em vez de escurecer. O texto por cima é quase preto, então
+     escurecer o campo derrubava o contraste para 3,98:1. */
+  --cor-marca-cheia-hover: #dd8a22;
+  --cor-marca-fundo: rgb(201 122 24 / 13%);
+  --cor-sobre-marca: #1f1608;
+
+  --cor-ok: #47764d;
+  --cor-sobre-ok: #f4f8f4;
+  --cor-ok-texto: #2f5936;
+  --cor-ok-fundo: rgb(71 118 77 / 12%);
+  --cor-perigo: #a8402f;
+  --cor-perigo-texto: #8b3323;
+  --cor-perigo-fundo: rgb(168 64 47 / 11%);
+  --cor-perigo-tenue: rgb(168 64 47 / 6%);
+
+  color-scheme: light;
+}
+
+:root {
+  /* Tipografia */
+  --fonte-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --fonte-texto: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --fonte-mono: 'IBM Plex Mono', 'Consolas', 'Courier New', monospace;
+
+  /* Medidas */
+  --lateral-largura: 232px;
+
+  /* -------------------------------------------------------------------------
+     Arredondamento. Vale uma regra só:
+
+     o raio pertence à SILHUETA de um grupo, nunca às suas partes.
+
+     Conjuntos contíguos — carrinho, faixa de dias, alternadores — arredondam só
+     os cantos externos e mantêm as divisórias internas retas. A grade continua
+     dura por dentro e ganha assinatura por fora, em vez de amolecer por igual e
+     perder a linguagem editorial.
+
+     A única exceção é a grade de horários: a quantidade varia, a última linha
+     fica irregular e o grupo não tem retângulo para arredondar. Lá o raio desce
+     para a peça e os blocos viram fichas.
+  ------------------------------------------------------------------------- */
+  --raio: 12px;
+  --raio-medio: 8px;
+  --raio-pequeno: 6px;
+  --raio-minimo: 3px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  font-family: var(--fonte-texto);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--fonte-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+  border-radius: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--cor-marca);
+  outline-offset: -2px;
+}
+
+::selection {
+  background: var(--cor-marca-cheia);
+  color: var(--cor-sobre-marca);
+}
+
+* {
+  scrollbar-color: var(--cor-borda-forte) transparent;
+  scrollbar-width: thin;
+}
+
+/* =============================================================================
+   Kit de UI compartilhado
+   ========================================================================== */
+
+/** Rótulo de seção: `01 CLIENTE`. */
+.rotulo {
+  color: var(--cor-marca);
+  font-family: var(--fonte-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.regua {
+  height: 1px;
+  margin: 0;
+  border: 0;
+  background: var(--cor-borda);
+}
+
+.campo__entrada {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-pequeno);
+  background: var(--cor-fundo);
+  font-size: 14px;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease;
+
+  &::placeholder {
+    color: var(--cor-texto-fraco);
+  }
+
+  &:hover,
+  &:focus {
+    border-color: var(--cor-marca);
+    outline: none;
+  }
+
+  &--area {
+    min-height: 72px;
+    resize: vertical;
+  }
+}
+
+.botao-principal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: var(--raio-pequeno);
+  background: var(--cor-marca-cheia);
+  color: var(--cor-sobre-marca);
+  font-family: var(--fonte-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: background 0.12s ease;
+
+  &:hover {
+    background: var(--cor-marca-cheia-hover);
+  }
+
+  /* Seta desenhada com bordas, sem depender de fonte de ícone. */
+  &::after {
+    content: '';
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border: solid currentcolor;
+    border-width: 2px 2px 0 0;
+    transform: rotate(45deg) translate(-1px, 1px);
+  }
+}
+
+/** Mesma forma do botão principal, só que contornado. */
+.botao-secundario {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 15px;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-pequeno);
+  background: transparent;
+  color: var(--cor-texto-suave);
+  font-family: var(--fonte-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition:
+    border-color 0.12s ease,
+    color 0.12s ease,
+    background 0.12s ease;
+
+  &:hover {
+    border-color: var(--cor-marca);
+    background: var(--cor-marca-fundo);
+    color: var(--cor-marca);
+  }
+
+  /* Depois do :hover de propósito — botão marcado continua marcado sob o mouse.
+     Mesmo campo chapado do alternador, para os dois lerem como um estado só. */
+  &.is-ativo {
+    border-color: transparent;
+    background: var(--cor-marca-cheia);
+    color: var(--cor-sobre-marca);
+    font-weight: 600;
+  }
+}
+
+/**
+ * Alternador de duas ou mais opções contíguas. Segue a regra do raio: a
+ * silhueta arredonda, as divisórias internas ficam retas.
+ */
+.alternador {
+  display: inline-flex;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-pequeno);
+  overflow: hidden;
+}
+
+.alternador__op {
+  padding: 5px 13px;
+  border: 0;
+  background: transparent;
+  color: var(--cor-texto-suave);
+  font-family: var(--fonte-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+
+  &+& {
+    border-left: 1px solid var(--cor-borda-forte);
+  }
+
+  &:hover {
+    color: var(--cor-texto);
+  }
+
+  &.is-ativo {
+    background: var(--cor-marca-cheia);
+    color: var(--cor-sobre-marca);
+    font-weight: 600;
+  }
+}
+
+/* =============================================================================
+   Faixa de dias da semana.
+
+   Usada para escolher a data no formulário e para filtrar a agenda por dia. Só
+   as pontas da faixa arredondam; os sete dias do meio ficam retos, seguindo a
+   regra do raio na silhueta.
+   ========================================================================== */
+
+.semana {
+  display: flex;
+  align-items: stretch;
+}
+
+.semana__seta {
+  flex: none;
+  width: 32px;
+  border: 1px solid var(--cor-borda-forte);
+  background: var(--cor-fundo);
+  color: var(--cor-texto-suave);
+  font-size: 18px;
+  line-height: 1;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+
+  &:first-child {
+    border-radius: var(--raio-medio) 0 0 var(--raio-medio);
+  }
+
+  &:last-child {
+    border-radius: 0 var(--raio-medio) var(--raio-medio) 0;
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--cor-marca-cheia);
+    color: var(--cor-sobre-marca);
+  }
+
+  &:disabled {
+    color: var(--cor-borda-forte);
+    cursor: not-allowed;
+  }
+}
+
+/* `min-width: 0` é o que impede a faixa de empurrar a página: sem ele o item
+   flex assume a largura do conteúdo e a rolagem lateral vaza para o body. */
+.semana__dias {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+  border-block: 1px solid var(--cor-borda-forte);
+  background: var(--cor-borda-forte);
+}
+
+.dia {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 5px;
+  padding: 12px 4px;
+  border: 0;
+  background: var(--cor-fundo);
+  white-space: nowrap;
+  transition: background 0.12s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--cor-superficie-alta);
+  }
+
+  &.is-ativo {
+    background: var(--cor-marca-cheia);
+
+    .dia__rotulo,
+    .dia__mes,
+    .dia__num {
+      color: var(--cor-sobre-marca);
+    }
+  }
+
+  /* Hoje ganha um traço na base enquanto não está selecionado. */
+  &.is-hoje:not(.is-ativo) {
+    box-shadow: inset 0 -2px 0 var(--cor-marca);
+  }
+
+  /* Dia que já passou ou lotou continua na faixa, só apagado. O traço de hoje
+     sai daqui para não competir com os dias que ainda dá para reservar. */
+  &:disabled {
+    cursor: not-allowed;
+    box-shadow: none;
+
+    .dia__rotulo,
+    .dia__mes,
+    .dia__num {
+      color: var(--cor-texto-fraco);
+      font-weight: 400;
+    }
+  }
+}
+
+.dia__rotulo,
+.dia__mes {
+  color: var(--cor-texto-suave);
+  font-family: var(--fonte-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+}
+
+.dia__num {
+  font-family: var(--fonte-display);
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.aviso {
+  margin-top: 10px;
+  color: var(--cor-perigo);
+  font-family: var(--fonte-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* A barra de acento fica reta; só os cantos opostos a ela arredondam. */
+.alerta {
+  margin: 14px 0 0;
+  padding: 11px 12px;
+  border-left: 3px solid;
+  border-radius: 0 var(--raio-pequeno) var(--raio-pequeno) 0;
+  font-size: 13px;
+  line-height: 1.45;
+
+  &--erro {
+    border-color: var(--cor-perigo);
+    background: var(--cor-perigo-fundo);
+    color: var(--cor-perigo-texto);
+  }
+
+  &--ok {
+    border-color: var(--cor-ok);
+    background: var(--cor-ok-fundo);
+    color: var(--cor-ok-texto);
+  }
+}
