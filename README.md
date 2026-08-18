@@ -1,135 +1,157 @@
 # Abarbeirados
 
-Sistema de gestão para barbearia — projeto acadêmico do 4º período de
-Engenharia de Software / Análise e Desenvolvimento de Sistemas da **Uniamerica**.
+Sistema de gestão para barbearia — projeto acadêmico do 4º período de Engenharia de
+Software / Análise e Desenvolvimento de Sistemas da **Uniamerica**, atendendo a uma
+demanda real encaminhada à faculdade.
 
-O projeto atende a uma demanda real encaminhada à faculdade. O documento de
-especificação do demandante ainda não foi formalizado, portanto as entidades e
-regras de negócio seguem em aberto — o desenvolvimento avança sobre o domínio
-(barbearia) e os critérios técnicos já definidos para a entrega.
+Backend Spring Boot com CRUD de Cliente, Serviço e Agendamento; frontend Angular
+consumindo a API. Roda ponta a ponta, com H2 em memória.
 
----
+## Equipe
 
-## Status
-
-| Frente | Situação |
+| Integrante | Branch |
 |---|---|
-| Backend (Spring Boot) | CRUD de Cliente e Serviço concluído; Agendamento pendente |
-| Frontend (Angular) | Tela de agendamento implementada; listagem pendente |
-| Banco de dados | H2 em memória (provisório) → PostgreSQL 18 |
-| Especificação do demandante | Pendente |
+| João Pedro Rospirski Pegorini | `jp` |
+| Cauã Buch Domingues | `domingues` |
+| Christopher Adam | `Alok` |
+| Leonardo Barth | `Leo` |
+
+## Stack
+
+Java 17 · Spring Boot 4.1.0 (Web MVC + Data JPA) · Lombok · H2 em memória ·
+Angular 19.2 · TypeScript 5.7 · Node.js 20.11+
 
 ---
 
 ## Entrega Parcial 1 — Aplicação com CRUD completo
 
-### Critérios de avaliação
-
 | # | Critério | Peso | Status |
 |---|---|:---:|:---:|
 | 1 | Projeto Spring Boot com pacotes ajustados ao projeto (não usar `demo`) | 2 | ✅ |
-| 2 | CRUD completo | 4 | ⬜ |
-| 3 | Mínimo de 6 endpoints — verbos HTTP adequados | 1 | ⬜ |
-| 4 | Mínimo de 6 endpoints — códigos HTTP adequados | 1 | ⬜ |
-| 5 | Mínimo de 6 endpoints — retorno estruturado | 1 | ⬜ |
-| 6 | Ao menos um `@PathVariable`, um `@RequestParam` e um `@RequestBody` | 1 | ⬜ |
-| 7 | Estruturação MVC adequada ao projeto | 3 | ⬜ |
-| 8 | Uso de Lombok e `record` | 2 | ⬜ |
-| 9 | Uso de DTOs | 2 | ⬜ |
+| 2 | CRUD completo | 4 | ✅ |
+| 3 | Mínimo de 6 endpoints — verbos HTTP adequados | 1 | ✅ |
+| 4 | Mínimo de 6 endpoints — códigos HTTP adequados | 1 | ✅ |
+| 5 | Mínimo de 6 endpoints — retorno estruturado | 1 | ✅ |
+| 6 | Ao menos um `@PathVariable`, um `@RequestParam` e um `@RequestBody` | 1 | ✅ |
+| 7 | Estruturação MVC adequada ao projeto | 3 | ✅ |
+| 8 | Uso de Lombok e `record` | 2 | ✅ |
+| 9 | Uso de DTOs | 2 | ✅ |
 | | **Total** | **17** | |
 
-> **Critério 1 já atendido:** o pacote base é `uniamerica.abarbeirados`, definido na
-> geração do projeto. Nenhum vestígio de `com.example.demo`.
+**1 · Pacotes** — base `uniamerica.abarbeirados`. Nenhuma ocorrência de
+`com.example` ou `demo`.
 
-### O que deve ser entregue
+**2 · CRUD completo** — `Cliente`, `Servico` e `Agendamento`, cada um com o ciclo
+inteiro (criar, listar, buscar, atualizar, excluir) e com model, repository,
+service, mapper e DTOs próprios.
 
-- Link do repositório no GitHub
-- Arquivo ZIP com o `src` da aplicação
+**3 · Verbos** — 17 endpoints: `GET` (7), `POST` (3), `PUT` (3), `PATCH` (1) e
+`DELETE` (3). O `PATCH` é o avanço de status do agendamento, que altera um campo
+só e por isso não é um `PUT`.
 
-> Esta entrega é **exclusivamente backend** — o documento não menciona telas.
-> O frontend Angular entra em etapa posterior.
+**4 · Códigos HTTP** — `201` na criação, `200` em leitura e atualização, `204` na
+exclusão, `400` em validação, `404` em recurso ou rota inexistente e `409` ao
+excluir registro em uso.
+
+**5 · Retorno estruturado** — nenhum endpoint devolve entidade JPA; tudo passa por
+DTO de resposta. Erros seguem o formato único `ApiError`, montado no
+`GlobalException`.
+
+**6 · Parâmetros** — `@PathVariable` nas rotas `/{id}` (10 usos), `@RequestParam`
+nos filtros `nome`, `busca`, `data` e `apenasAtivos` (5 usos) e `@RequestBody` nos
+`POST`, `PUT` e `PATCH` (7 usos).
+
+**7 · MVC** — oito camadas: `controller`, `service`, `repository`, `mapper`,
+`dto`, `model`, `exception` e `config`. Nenhum controller importa entidade JPA — só
+DTOs. Regra de negócio e acesso ao repositório ficam no service; a conversão
+entidade ↔ DTO, nos mappers `@Component`.
+
+**8 · Lombok e `record`** — Lombok em 9 arquivos (`@Getter`, `@Setter`,
+`@NoArgsConstructor`, `@AllArgsConstructor` e `@Builder` nas entidades;
+`@RequiredArgsConstructor` em controllers e services). Os 9 DTOs são `record`.
+
+**9 · DTOs** — request e response separados por operação, agrupados por domínio em
+`dto/cliente`, `dto/servico`, `dto/agendamento` e `dto/error`. A entrada carrega a
+validação; a saída expõe só o necessário.
+
+**Entregar:** link do repositório no GitHub e ZIP com o `src`.
 
 ---
 
-## Equipe
+## API
 
-- João Pedro Rospirski Pegorini
-- Cauã Buch Domingues
-- Christopher Adam
-- Leonardo Barth
+Base: `http://localhost:8080`
 
----
+| Verbo | Rota | Retorno |
+|---|---|---|
+| `POST` | `/api/clientes` | `201` · `400` |
+| `GET` | `/api/clientes?nome=` | `200` |
+| `GET` | `/api/clientes/{id}` | `200` · `404` |
+| `PUT` | `/api/clientes/{id}` | `200` · `404` |
+| `DELETE` | `/api/clientes/{id}` | `204` · `404` · `409` |
+| `POST` | `/api/servicos` | `201` · `400` |
+| `GET` | `/api/servicos?nome=&apenasAtivos=` | `200` |
+| `GET` | `/api/servicos/{id}` | `200` · `404` |
+| `PUT` | `/api/servicos/{id}` | `200` · `404` |
+| `DELETE` | `/api/servicos/{id}` | `204` · `404` · `409` |
+| `POST` | `/api/agendamentos` | `201` · `400` · `404` |
+| `GET` | `/api/agendamentos?busca=&data=` | `200` |
+| `GET` | `/api/agendamentos/agenda` | `200` |
+| `GET` | `/api/agendamentos/{id}` | `200` · `404` |
+| `PUT` | `/api/agendamentos/{id}` | `200` · `404` |
+| `PATCH` | `/api/agendamentos/{id}/status` | `200` · `404` |
+| `DELETE` | `/api/agendamentos/{id}` | `204` · `404` |
 
-## Tecnologias
+O agendamento referencia `Cliente` e `Servico` por chave estrangeira, mas guarda
+`valor` e `duracaoMinutos` copiados do serviço no momento da marcação: se o preço
+do catálogo mudar depois, o histórico preserva o que foi cobrado.
 
-| Camada | Tecnologia | Versão | Observação |
-|---|---|---|---|
-| Backend | Java | 17 | Baseline do Spring Boot 4.x |
-| | Spring Boot | 4.1.0 | Web MVC + Data JPA |
-| | Maven | 3.9.16 | Via wrapper (`mvnw`), sem instalação |
-| | Lombok | — | Gerenciado pelo Spring Boot |
-| Banco | H2 | — | Provisório, em memória |
-| | PostgreSQL | 18 | Definitivo — não integrado ainda |
-| Frontend | Angular | 19 | Não inicializado |
-| | Node.js | 20.11+ | Ver nota abaixo |
-| Apoio | DBeaver, IntelliJ IDEA | — | Cliente do banco e IDE do time |
-
-> **Node.js:** o Angular 19 exige `^18.19.1`, `^20.11.1` ou `^22.x`. A linha 14 não é
-> suportada e falha na instalação do Angular CLI. Use **20.11 LTS ou superior**.
-
-> **Spring Boot 4** renomeou artefatos: `starter-web` virou `starter-webmvc`,
-> `starter-test` foi dividido em `webmvc-test` e `data-jpa-test`, e o console H2 é o
-> módulo `spring-boot-h2console`. Tutoriais de Boot 2/3 quebram o build — consulte a
-> [documentação da 4.1.0](https://docs.spring.io/spring-boot/4.1.0/).
+Frontend: `/agendamentos` é a listagem (três visualizações, filtro por dia e troca
+de status) e `/agendamentos/novo` é o formulário de marcação.
 
 ---
 
 ## Como executar
 
-**Pelo IntelliJ IDEA** (caminho padrão do time): abra a pasta do projeto, confirme o
-SDK como **JDK 17** em *File → Project Structure → Project* e execute
-`AbarbeiradosApplication`.
-
-**Pelo terminal:**
+O backend precisa subir antes do frontend.
 
 ```bash
+cd back
 ./mvnw spring-boot:run      # Linux / macOS
 mvnw.cmd spring-boot:run    # Windows
 ```
 
-> O terminal exige `java` no `PATH` e `JAVA_HOME` apontando para o JDK 17. Quem usa
-> apenas o IntelliJ não precisa configurar nada — a IDE resolve o JDK internamente.
+```bash
+cd front
+npm install
+npm start
+```
 
-A aplicação sobe em `http://localhost:8080`.
+Backend em `http://localhost:8080`, frontend em `http://localhost:4200`. O
+`proxy.conf.json` encaminha `/api` para a 8080, então não há CORS em desenvolvimento.
 
-**Banco de dados:** o H2 em memória é criado na inicialização, sem credenciais a
-configurar. Os dados são perdidos a cada reinicialização — esperado nesta fase.
+O terminal exige `JAVA_HOME` apontando para o JDK 17; pelo IntelliJ, basta definir o
+SDK do projeto e rodar `AbarbeiradosApplication`.
 
----
+**Console do H2** — `http://localhost:8080/h2-console`, JDBC URL
+`jdbc:h2:mem:abarbeirados`, usuário `sa`, senha em branco.
 
-## Convenções
+**Primeiro uso** — o banco é em memória e nasce vazio, perdendo os dados a cada
+reinicialização. Cadastre um serviço antes de abrir o formulário de marcação:
 
-**Branches:** `main` (estável) · `feature/<descricao>` · `fix/<descricao>`.
-Trabalhe em branch própria e integre via Pull Request.
-
-**Commits:** [Conventional Commits](https://www.conventionalcommits.org/pt-br/) —
-`feat`, `fix`, `refactor`, `docs`, `chore`, `test`.
-Exemplo: `feat: adiciona endpoint de listagem de clientes`
+```bash
+curl -X POST http://localhost:8080/api/servicos \
+  -H "Content-Type: application/json" \
+  -d '{"nome":"Corte masculino","valor":45.00,"duracaoMinutos":30}'
+```
 
 ---
 
 ## Próximos passos
 
-- [ ] Receber o documento de especificação do demandante
-- [ ] Modelar as entidades do domínio
-- [ ] Estruturar as camadas MVC (`model`, `repository`, `service`, `controller`)
-- [ ] Implementar DTOs como `record`
-- [ ] Implementar o CRUD e os 6 endpoints
-- [ ] Migrar de H2 para PostgreSQL 18
-- [x] Inicializar o frontend Angular 19
-- [x] Tela de agendamento (frontend)
-- [ ] Tela de listagem (frontend)
-- [ ] Implementar o domínio Agendamento no backend e ligar a tela à API
+Especificação do demandante · migração para PostgreSQL 18 · carga inicial do
+catálogo · validação de conflito de horário · telas de Cliente e Serviço ·
+testes automatizados.
 
 ---
 
