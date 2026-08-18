@@ -1,6 +1,7 @@
 package uniamerica.abarbeirados.exception;
 
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import uniamerica.abarbeirados.dto.error.ApiError;
 
 import java.time.LocalDateTime;
@@ -71,6 +73,23 @@ public class GlobalException {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiError> handleResourceNotFound(ResourceNotFoundException ex) {
         ApiError apiError = buildError(HttpStatus.NOT_FOUND, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
+    }
+
+    // Violacao de integridade no banco. O caso comum e tentar excluir um cliente
+    // ou servico que ainda tem agendamento apontando para ele.
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        ApiError apiError = buildError(HttpStatus.CONFLICT,
+                "O registro não pode ser alterado ou excluído porque está sendo usado por outro registro");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(apiError);
+    }
+
+    // URL que nao casa com nenhum endpoint. Sem este handler a excecao caia no
+    // handler generico abaixo e virava 500, escondendo um simples erro de rota.
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiError> handleNoResourceFound(NoResourceFoundException ex) {
+        ApiError apiError = buildError(HttpStatus.NOT_FOUND, "Rota não encontrada: " + ex.getResourcePath());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
     }
 

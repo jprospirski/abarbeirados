@@ -14,6 +14,7 @@ public class ServicoMapper {
                 .nome(request.nome())
                 .valor(request.valor())
                 .duracaoMinutos(request.duracaoMinutos())
+                .ativo(request.ativoOuPadrao())
                 .build();
     }
 
@@ -21,6 +22,7 @@ public class ServicoMapper {
         servico.setNome(request.nome());
         servico.setValor(request.valor());
         servico.setDuracaoMinutos(request.duracaoMinutos());
+        servico.setAtivo(request.ativoOuPadrao());
     }
 
     public ServicoResponse forResponse(Servico servico) {

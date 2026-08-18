@@ -3,6 +3,7 @@ package uniamerica.abarbeirados.service;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import uniamerica.abarbeirados.dto.servico.ServicoRequest;
@@ -19,12 +20,14 @@ public class ServicoService {
     private final ServicoRepository servicoRepository;
     private final ServicoMapper servicoMapper;
 
+    @Transactional
     public ServicoResponse criar(ServicoRequest request) {
         Servico servico = servicoMapper.forEntity(request);
         Servico salvo = servicoRepository.save(servico);
         return servicoMapper.forResponse(salvo);
     }
 
+    @Transactional(readOnly = true)
     public List<ServicoResponse> listar(String nome, Boolean apenasAtivos) {
         List<Servico> servico;
         if (nome != null && !nome.isBlank()) {
@@ -37,16 +40,19 @@ public class ServicoService {
         return servico.stream().map(servicoMapper::forResponse).toList();
     }
 
+    @Transactional(readOnly = true)
     public ServicoResponse buscarPorId(Long id) {
         return servicoMapper.forResponse(buscarEntidadePorId(id));
     }
 
+    @Transactional
     public ServicoResponse atualizar(Long id, ServicoRequest request) {
         Servico servico = buscarEntidadePorId(id);
         servicoMapper.updateEntity(request, servico);
         return servicoMapper.forResponse(servicoRepository.save(servico));
     }
 
+    @Transactional
     public void excluir(Long id) {
         Servico servico = buscarEntidadePorId(id);
         servicoRepository.delete(servico);

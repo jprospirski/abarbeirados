@@ -14,6 +14,13 @@ public record ServicoRequest(
         BigDecimal valor,
         @NotNull(message = "A duração é obrigatória")
         @Positive(message = "A duração deve ser maior que zero")
-        Integer duracaoMinutos
+        Integer duracaoMinutos,
+        // Opcional: quem nao informa cria o servico ativo, que era o comportamento
+        // antes deste campo existir.
+        Boolean ativo
 ) {
+
+    public boolean ativoOuPadrao() {
+        return ativo == null || ativo;
+    }
 }
