@@ -352,6 +352,58 @@ textarea {
   }
 }
 
+/**
+ * Card único em blocos empilhados. Nasceu na tela de agendamento e passou para
+ * cá quando o login precisou do mesmo cartão — a regra do raio na silhueta
+ * vale aqui também: `overflow: hidden` recorta os blocos retos contra o
+ * canto arredondado do painel.
+ */
+.painel {
+  min-width: 0;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+  overflow: hidden;
+}
+
+.bloco {
+  padding: 20px 22px;
+
+  &+& {
+    border-top: 1px solid var(--cor-borda);
+  }
+
+  &--erro {
+    background: var(--cor-perigo-tenue);
+    box-shadow: inset 3px 0 0 var(--cor-perigo);
+  }
+}
+
+.bloco__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.bloco__mes {
+  color: var(--cor-marca);
+  font-family: var(--fonte-display);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.bloco__meta {
+  color: var(--cor-texto-fraco);
+  font-family: var(--fonte-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 /* =============================================================================
    Faixa de dias da semana.
 

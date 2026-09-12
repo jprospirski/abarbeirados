@@ -184,6 +184,19 @@
                 }
               </select>
             </div>
+
+            <div class="cartao__acoes">
+              <a class="botao-secundario" [routerLink]="['/agendamentos', a.id, 'editar']">
+                Editar
+              </a>
+              <button
+                type="button"
+                class="botao-secundario botao-secundario--perigo"
+                (click)="pedirExclusao(a)"
+              >
+                Excluir
+              </button>
+            </div>
           </li>
         }
       </ul>
@@ -198,6 +211,7 @@
           <span>Serviço</span>
           <span>Valor</span>
           <span>Status</span>
+          <span>Ações</span>
         </div>
 
         @for (a of agendamentos(); track a.id) {
@@ -223,6 +237,18 @@
                 <option [value]="s">{{ STATUS_LABEL[s] }}</option>
               }
             </select>
+            <div class="tabela__acoes">
+              <a class="botao-secundario" [routerLink]="['/agendamentos', a.id, 'editar']">
+                Editar
+              </a>
+              <button
+                type="button"
+                class="botao-secundario botao-secundario--perigo"
+                (click)="pedirExclusao(a)"
+              >
+                Excluir
+              </button>
+            </div>
           </div>
         }
       </div>
@@ -258,6 +284,18 @@
                       <option [value]="s">{{ STATUS_LABEL[s] }}</option>
                     }
                   </select>
+                  <div class="ficha__acoes">
+                    <a class="botao-secundario" [routerLink]="['/agendamentos', a.id, 'editar']">
+                      Editar
+                    </a>
+                    <button
+                      type="button"
+                      class="botao-secundario botao-secundario--perigo"
+                      (click)="pedirExclusao(a)"
+                    >
+                      Excluir
+                    </button>
+                  </div>
                 </article>
               } @empty {
                 <p class="coluna__vazia">Nenhum</p>
@@ -269,3 +307,12 @@
     }
   }
 </section>
+
+<app-confirmar-exclusao
+  [aberto]="!!exclusaoAlvo()"
+  [nomeCliente]="exclusaoAlvo()?.clienteNome ?? ''"
+  [erro]="erroExclusao()"
+  [excluindo]="excluindo()"
+  (confirmar)="confirmarExclusao()"
+  (cancelar)="cancelarExclusao()"
+/>

@@ -25,23 +25,25 @@
 
   <hr class="regua" />
 
-  <nav class="nav">
-    <a
-      class="nav__item"
-      routerLink="/agendamentos"
-      routerLinkActive="is-ativo"
-      [routerLinkActiveOptions]="{ exact: true }"
-    >
-      <span class="nav__num">01</span>
-      <span class="nav__texto">Agendamentos</span>
-      <i class="nav__ponto" aria-hidden="true"></i>
-    </a>
-    <a class="nav__item" routerLink="/agendamentos/novo" routerLinkActive="is-ativo">
-      <span class="nav__num">02</span>
-      <span class="nav__texto">Novo agendamento</span>
-      <i class="nav__ponto" aria-hidden="true"></i>
-    </a>
-  </nav>
+  @if (auth.autenticado()) {
+    <nav class="nav">
+      <a
+        class="nav__item"
+        routerLink="/agendamentos"
+        routerLinkActive="is-ativo"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        <span class="nav__num">01</span>
+        <span class="nav__texto">Agendamentos</span>
+        <i class="nav__ponto" aria-hidden="true"></i>
+      </a>
+      <a class="nav__item" routerLink="/agendamentos/novo" routerLinkActive="is-ativo">
+        <span class="nav__num">02</span>
+        <span class="nav__texto">Novo agendamento</span>
+        <i class="nav__ponto" aria-hidden="true"></i>
+      </a>
+    </nav>
+  }
 
   <div class="lateral__base">
     <div class="tema" role="group" aria-label="Tema da interface">
@@ -64,6 +66,12 @@
         Claro
       </button>
     </div>
+
+    @if (auth.autenticado()) {
+      <button type="button" class="botao-secundario lateral__sair" (click)="sair()">
+        Sair
+      </button>
+    }
 
     <footer class="lateral__rodape">
       <p>Uniamerica &middot; 4º período</p>

@@ -1,4 +1,8 @@
 <div class="agendar">
+  <p class="rotulo agendar__contexto">
+    {{ modoEdicao() ? 'Editando agendamento #' + editandoId() : 'Novo agendamento' }}
+  </p>
+
   <form class="agendar__grid" [formGroup]="form" (ngSubmit)="confirmar()">
     <!-- ============================================== card unico do fluxo -->
     <div class="painel">
@@ -250,7 +254,7 @@
         <div class="comprovante__cabecalho">
           <h2 class="rotulo">05 Resumo</h2>
           <span class="comprovante__selo">
-            {{ confirmado() ? 'Confirmado' : 'Pré-reserva' }}
+            {{ confirmado() ? 'Confirmado' : modoEdicao() ? 'Edição' : 'Pré-reserva' }}
           </span>
         </div>
 
@@ -311,7 +315,11 @@
         }
 
         <button type="submit" class="botao-principal" [disabled]="salvando()">
-          {{ salvando() ? 'Agendando...' : 'Confirmar agendamento' }}
+          @if (salvando()) {
+            {{ modoEdicao() ? 'Salvando...' : 'Agendando...' }}
+          } @else {
+            {{ modoEdicao() ? 'Salvar alterações' : 'Confirmar agendamento' }}
+          }
         </button>
       </div>
     </aside>

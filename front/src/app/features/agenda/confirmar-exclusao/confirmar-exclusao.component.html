@@ -1,0 +1,50 @@
+@if (aberto) {
+  <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="tituloConfirmarExclusao">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title" id="tituloConfirmarExclusao">Excluir agendamento</h5>
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Fechar"
+            [disabled]="excluindo"
+            (click)="cancelar.emit()"
+          ></button>
+        </div>
+
+        <div class="modal-body">
+          <p class="mb-0">
+            Tem certeza que deseja excluir o agendamento de
+            <strong>{{ nomeCliente }}</strong>? Essa ação não pode ser desfeita.
+          </p>
+
+          @if (erro) {
+            <p class="alerta alerta--erro" role="alert">{{ erro }}</p>
+          }
+        </div>
+
+        <div class="modal-footer border-0 pt-0">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            [disabled]="excluindo"
+            (click)="cancelar.emit()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn-danger"
+            [disabled]="excluindo"
+            (click)="confirmar.emit()"
+          >
+            {{ excluindo ? 'Excluindo...' : 'Excluir' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop show"></div>
+}

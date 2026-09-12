@@ -8,7 +8,8 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { Observable, map, of, switchMap } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Observable, map, merge, of, switchMap } from 'rxjs';
 
 import { Agendamento, Horario } from '../../core/models/agendamento.model';
 import { ItemCarrinho, ItemServico } from '../../core/models/servico.model';
@@ -17,11 +18,14 @@ import {
   DIAS_SEMANA,
   MESES,
   MESES_CURTOS,
+  dataDe,
+  horaDe,
   inicioDaSemana,
   paraDataHora,
   paraDataIso,
   paraHora,
   paraMinutos,
+  rotuloMes,
   somarDias,
 } from '../../core/util/data.util';
 
@@ -71,16 +75,22 @@ function quimicaCompleta(grupo: AbstractControl): ValidationErrors | null {
 export class AgendamentoComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   protected readonly service = inject(AgendamentoService);
 
   protected readonly hoje = paraDataIso(new Date());
 
   protected readonly erro = signal<string | null>(null);
   protected readonly confirmado = signal<Agendamento | null>(null);
-  /** Trava o botão enquanto o POST está em voo, para não agendar em duplicata. */
+  /** Trava o botão enquanto o POST/PUT está em voo, para não duplicar o envio. */
   protected readonly salvando = signal(false);
   /** Começa recolhida — é o campo menos usado da tela. */
   protected readonly mostrarObs = signal(false);
+
+  /** Id do agendamento em edição, ou null quando a tela é "Novo agendamento". */
+  protected readonly editandoId = signal<number | null>(null);
+  protected readonly modoEdicao = computed(() => this.editandoId() !== null);
 
   /** Domingo da semana que está aparecendo na faixa de datas. */
   private readonly inicioSemana = signal(inicioDaSemana(new Date()));
@@ -149,7 +159,9 @@ export class AgendamentoComponent implements OnInit {
 
       const lotado =
         !passado &&
-        !this.service.horariosDoDia(iso, duracao).some((h) => h.disponivel);
+        !this.service
+          .horariosDoDia(iso, duracao, this.editandoId() ?? undefined)
+          .some((h) => h.disponivel);
 
       return {
         iso,
@@ -164,18 +176,7 @@ export class AgendamentoComponent implements OnInit {
     });
   });
 
-  /** 'Agosto 2026', ou os dois meses quando a semana cai na virada. */
-  protected readonly tituloMes = computed(() => {
-    const inicio = this.inicioSemana();
-    const fim = somarDias(inicio, 6);
-    const ano = fim.getFullYear();
-
-    if (inicio.getMonth() === fim.getMonth()) {
-      return `${MESES[inicio.getMonth()]} ${ano}`;
-    }
-
-    return `${MESES[inicio.getMonth()]} — ${MESES[fim.getMonth()]} ${ano}`;
-  });
+  protected readonly tituloMes = computed(() => rotuloMes(this.inicioSemana()));
 
   /** Trava a seta de voltar em semanas que já passaram por inteiro. */
   protected readonly podeVoltar = computed(
@@ -205,7 +206,7 @@ export class AgendamentoComponent implements OnInit {
    */
   protected readonly horarios = computed<Horario[]>(() =>
     this.service
-      .horariosDoDia(this.valor().data, this.duracao())
+      .horariosDoDia(this.valor().data, this.duracao(), this.editandoId() ?? undefined)
       .filter((h) => h.disponivel),
   );
 
@@ -219,15 +220,11 @@ export class AgendamentoComponent implements OnInit {
 
   constructor() {
     // Mudar serviço, química ou data pode invalidar o horário já escolhido.
-    this.form.controls.itens.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => this.revalidarHorario());
-
-    this.form.controls.quimicaDuracao.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => this.revalidarHorario());
-
-    this.form.controls.data.valueChanges
+    merge(
+      this.form.controls.itens.valueChanges,
+      this.form.controls.quimicaDuracao.valueChanges,
+      this.form.controls.data.valueChanges,
+    )
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.revalidarHorario());
 
@@ -241,6 +238,56 @@ export class AgendamentoComponent implements OnInit {
 
   ngOnInit(): void {
     this.service.carregar();
+
+    const idParam = this.route.snapshot.paramMap.get('id');
+    if (!idParam) {
+      return;
+    }
+
+    const id = Number(idParam);
+    this.editandoId.set(id);
+
+    this.service
+      .obterPorId(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (agendamento) => this.preencherParaEdicao(agendamento),
+        error: (e: unknown) => {
+          this.erro.set(
+            e instanceof Error ? e.message : 'Não foi possível carregar o agendamento.',
+          );
+        },
+      });
+  }
+
+  /**
+   * Prepara o form para edição a partir do que já está gravado.
+   *
+   * A combinação de serviços é reconstruída pelo NOME (ver
+   * {@link AgendamentoService.itensDoServico}), e a semana em exibição pula
+   * para a data do agendamento — senão a faixa abriria na semana atual e o
+   * dia marcado poderia nem aparecer nela.
+   */
+  private preencherParaEdicao(agendamento: Agendamento): void {
+    const itens = this.service.itensDoServico(agendamento.servicoNome);
+    const ehQuimica = itens.includes('QUIMICA');
+
+    const [ano, mes, dia] = dataDe(agendamento.dataHora).split('-').map(Number);
+    this.inicioSemana.set(inicioDaSemana(new Date(ano, mes - 1, dia)));
+
+    this.form.reset({
+      modoCliente: 'existente',
+      clienteId: agendamento.clienteId,
+      novoNome: '',
+      novoEmail: '',
+      novoTelefone: '',
+      itens,
+      quimicaDuracao: ehQuimica ? agendamento.duracaoMinutos : null,
+      quimicaValor: ehQuimica ? agendamento.valor : null,
+      data: dataDe(agendamento.dataHora),
+      hora: horaDe(agendamento.dataHora),
+      observacoes: agendamento.observacoes ?? '',
+    });
   }
 
   protected definirModoCliente(modo: 'existente' | 'novo'): void {
@@ -331,31 +378,46 @@ export class AgendamentoComponent implements OnInit {
             })
             .pipe(map((cliente) => cliente.id));
 
+    const editandoId = this.editandoId();
+
     clienteId$
       .pipe(
-        switchMap((clienteId) =>
-          this.service.criar(
-            {
-              clienteId,
-              servicoId: servico.id,
-              dataHora: paraDataHora(v.data, v.hora),
-              observacoes: v.observacoes,
-            },
-            this.duracao(),
-          ),
-        ),
+        switchMap((clienteId) => {
+          const corpo = {
+            clienteId,
+            servicoId: servico.id,
+            dataHora: paraDataHora(v.data, v.hora),
+            observacoes: v.observacoes,
+          };
+
+          return editandoId
+            ? this.service.atualizar(editandoId, corpo, this.duracao())
+            : this.service.criar(corpo, this.duracao());
+        }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (criado) => {
+        next: (resultado) => {
+          if (editandoId) {
+            // Não há o que "confirmar de novo" na tela: volta para a agenda.
+            this.router.navigate(['/agendamentos']);
+            return;
+          }
+
           // Mantém o dia escolhido: o normal é agendar vários clientes seguidos.
           this.form.reset({ modoCliente: 'existente', itens: [], data: v.data });
           this.mostrarObs.set(false);
-          this.confirmado.set(criado);
+          this.confirmado.set(resultado);
           this.salvando.set(false);
         },
         error: (e: unknown) => {
-          this.erro.set(e instanceof Error ? e.message : 'Não foi possível agendar.');
+          this.erro.set(
+            e instanceof Error
+              ? e.message
+              : editandoId
+                ? 'Não foi possível atualizar o agendamento.'
+                : 'Não foi possível agendar.',
+          );
           this.salvando.set(false);
         },
       });
@@ -403,7 +465,19 @@ export class AgendamentoComponent implements OnInit {
       return;
     }
 
-    const grade = this.service.horariosDoDia(v.data, this.duracaoDe(v));
+    // A edição prefila a hora antes do catálogo de serviços chegar (a busca do
+    // agendamento e o carregar() da listagem correm em paralelo). Sem isso, uma
+    // resposta que chegue nessa ordem calcularia a duração como 0, a grade
+    // ficaria errada, e o horário — que era válido — seria apagado à toa.
+    if (this.service.servicos().length === 0) {
+      return;
+    }
+
+    const grade = this.service.horariosDoDia(
+      v.data,
+      this.duracaoDe(v),
+      this.editandoId() ?? undefined,
+    );
 
     if (!grade.find((h) => h.hora === v.hora)?.disponivel) {
       this.form.controls.hora.setValue('');

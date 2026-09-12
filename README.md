@@ -72,13 +72,9 @@ SDK do projeto e rodar `AbarbeiradosApplication`.
 `jdbc:h2:mem:abarbeirados`, usuário `sa`, senha em branco.
 
 **Primeiro uso** — o banco é em memória e nasce vazio, perdendo os dados a cada
-reinicialização. Cadastre um serviço antes de abrir o formulário de marcação:
-
-```bash
-curl -X POST http://localhost:8080/api/servicos \
-  -H "Content-Type: application/json" \
-  -d '{"nome":"Corte masculino","valor":45.00,"duracaoMinutos":30}'
-```
+reinicialização. Não é preciso cadastrar nada à mão: o `ServicoSeeder` roda na
+inicialização do backend e, sempre que a tabela `servico` está vazia, insere os
+8 serviços (itens avulsos e combinações) que o formulário de marcação espera.
 
 ---
 
