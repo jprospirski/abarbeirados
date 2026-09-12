@@ -22,56 +22,13 @@
   gap: 14px;
 }
 
-/* ----------------------------------------------------------- card unico -- */
-
-.painel {
-  min-width: 0;
-  border: 1px solid var(--cor-borda);
-  border-radius: var(--raio);
-  background: var(--cor-superficie);
-  overflow: hidden;
+.agendar__contexto {
+  margin-bottom: 12px;
 }
 
-.bloco {
-  padding: 20px 22px;
-
-  &+& {
-    border-top: 1px solid var(--cor-borda);
-  }
-
-  &--erro {
-    background: var(--cor-perigo-tenue);
-    box-shadow: inset 3px 0 0 var(--cor-perigo);
-  }
-}
-
-.bloco__topo {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 14px;
-}
-
-.bloco__mes {
-  color: var(--cor-marca);
-  font-family: var(--fonte-display);
-  font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
-}
-
-.bloco__meta {
-  color: var(--cor-texto-fraco);
-  font-family: var(--fonte-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-/* O alternador virou peça do kit compartilhado em styles.scss, porque a tela de
-   serviços passou a usar a mesma forma. */
+/* .painel e .bloco viraram peças do kit compartilhado em styles.scss, porque a
+   tela de login passou a usar o mesmo cartão. O alternador já tinha feito o
+   mesmo caminho antes, pela tela de serviços. */
 
 .trio {
   display: grid;

@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, catchError, forkJoin, map, tap, throwError } from 'rxjs';
+import { Observable, catchError, forkJoin, tap, throwError } from 'rxjs';
 
 import {
   Agendamento,
@@ -36,7 +36,10 @@ import {
  *   listarServicos()         GET    /api/servicos?apenasAtivos=true
  *   criarCliente(req)        POST   /api/clientes
  *   criar(req, duracao)      POST   /api/agendamentos
+ *   obterPorId(id)           GET    /api/agendamentos/{id}
+ *   atualizar(id, req, dur)  PUT    /api/agendamentos/{id}
  *   atualizarStatus(id, st)  PATCH  /api/agendamentos/{id}/status
+ *   excluir(id)              DELETE /api/agendamentos/{id}
  *
  * O proxy.conf.json manda /api para a 8080, então em `ng serve` não há CORS.
  */
@@ -143,6 +146,20 @@ export class AgendamentoService {
     return this._servicos().find((s) => normalizar(s.nome) === alvo);
   }
 
+  /**
+   * Caminho inverso de {@link resolverServico}: a partir do nome gravado no
+   * agendamento, devolve os itens do carrinho que precisam ficar marcados ao
+   * reabrir o formulário em modo edição.
+   */
+  itensDoServico(servicoNome: string): ItemServico[] {
+    const alvo = normalizar(servicoNome);
+    const chave = Object.entries(COMBINACOES).find(
+      ([, nome]) => normalizar(nome) === alvo,
+    )?.[0];
+
+    return chave ? (chave.split('|') as ItemServico[]) : [];
+  }
+
   /** Quanto sairia comprando item por item — serve para mostrar a economia. */
   somaAvulsa(itens: ItemServico[]): number {
     return itens.reduce((total, chave) => {
@@ -178,13 +195,13 @@ export class AgendamentoService {
    * Quem decide o conflito é a duração real, não o tamanho do bloco: um corte
    * das 15:00 leva 40 min, termina 15:40 e deixa o bloco das 15:40 livre.
    */
-  horariosDoDia(data: string, duracaoMinutos: number | null): Horario[] {
+  horariosDoDia(data: string, duracaoMinutos: number | null, ignorarId?: number): Horario[] {
     const inicio = paraMinutos(this.abertura);
     const fim = paraMinutos(this.fechamento);
     const duracao = duracaoMinutos && duracaoMinutos > 0 ? duracaoMinutos : this.intervalo;
 
     const ocupados = this.agendaDoDia(data)
-      .filter((a) => a.status !== 'CANCELADO')
+      .filter((a) => a.status !== 'CANCELADO' && a.id !== ignorarId)
       .map((a) => ({
         inicio: paraMinutos(horaDe(a.dataHora)),
         duracao: a.duracaoMinutos,
@@ -240,40 +257,48 @@ export class AgendamentoService {
   }
 
   /**
-   * Cria o agendamento depois de revalidar o conflito de horário.
-   *
-   * A checagem de conflito é feita aqui porque o backend ainda não valida
+   * Revalida o conflito de horário no cliente porque o backend ainda não checa
    * sobreposição — está anotado como pendência no README. `duracao` vem por
-   * parâmetro só para essa conta; o valor e a duração gravados são os que o
-   * backend copia do serviço.
+   * parâmetro só para essa conta; na edição, `ignorarId` tira o próprio
+   * agendamento da lista de ocupados para ele não bater contra si mesmo.
    */
-  criar(request: AgendamentoRequest, duracao: number): Observable<Agendamento> {
-    const data = dataDe(request.dataHora);
-    const inicio = paraMinutos(horaDe(request.dataHora));
+  private temConflito(dataHora: string, duracao: number, ignorarId?: number): boolean {
+    const inicio = paraMinutos(horaDe(dataHora));
 
-    const conflito = this.agendaDoDia(data)
-      .filter((a) => a.status !== 'CANCELADO')
+    return this.agendaDoDia(dataDe(dataHora))
+      .filter((a) => a.status !== 'CANCELADO' && a.id !== ignorarId)
       .some((a) =>
         haConflito(inicio, duracao, paraMinutos(horaDe(a.dataHora)), a.duracaoMinutos),
       );
+  }
 
-    if (conflito) {
-      return throwError(
-        () => new Error('Esse horário acabou de ser ocupado. Escolha outro na grade.'),
-      );
-    }
-
-    const corpo: AgendamentoRequest = {
+  /** Corpo do POST/PUT: observação em branco vira null, nunca string vazia. */
+  private corpoAgendamento(request: AgendamentoRequest): AgendamentoRequest {
+    return {
       clienteId: request.clienteId,
       servicoId: request.servicoId,
       dataHora: request.dataHora,
       observacoes: request.observacoes?.trim() || null,
     };
+  }
 
-    return this.http.post<Agendamento>('/api/agendamentos', corpo).pipe(
-      tap((criado) => this._agendamentos.update((lista) => [...lista, criado])),
-      catchError(traduzirErro('Não foi possível agendar.')),
-    );
+  /**
+   * Cria o agendamento depois de revalidar o conflito de horário. O valor e a
+   * duração gravados são os que o backend copia do serviço.
+   */
+  criar(request: AgendamentoRequest, duracao: number): Observable<Agendamento> {
+    if (this.temConflito(request.dataHora, duracao)) {
+      return throwError(
+        () => new Error('Esse horário acabou de ser ocupado. Escolha outro na grade.'),
+      );
+    }
+
+    return this.http
+      .post<Agendamento>('/api/agendamentos', this.corpoAgendamento(request))
+      .pipe(
+        tap((criado) => this._agendamentos.update((lista) => [...lista, criado])),
+        catchError(traduzirErro('Não foi possível agendar.')),
+      );
   }
 
   atualizarStatus(id: number, status: StatusAgendamento): Observable<Agendamento> {
@@ -287,6 +312,42 @@ export class AgendamentoService {
         ),
         catchError(traduzirErro('Não foi possível alterar o status.')),
       );
+  }
+
+  /**
+   * Busca direta ao servidor, usada pela tela de edição: ela pode abrir por
+   * link direto, antes da listagem completa terminar de carregar.
+   */
+  obterPorId(id: number): Observable<Agendamento> {
+    return this.http
+      .get<Agendamento>(`/api/agendamentos/${id}`)
+      .pipe(catchError(traduzirErro('Não foi possível carregar o agendamento.')));
+  }
+
+  atualizar(id: number, request: AgendamentoRequest, duracao: number): Observable<Agendamento> {
+    if (this.temConflito(request.dataHora, duracao, id)) {
+      return throwError(
+        () => new Error('Esse horário acabou de ser ocupado. Escolha outro na grade.'),
+      );
+    }
+
+    return this.http
+      .put<Agendamento>(`/api/agendamentos/${id}`, this.corpoAgendamento(request))
+      .pipe(
+        tap((atualizado) =>
+          this._agendamentos.update((lista) =>
+            lista.map((a) => (a.id === id ? atualizado : a)),
+          ),
+        ),
+        catchError(traduzirErro('Não foi possível atualizar o agendamento.')),
+      );
+  }
+
+  excluir(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/agendamentos/${id}`).pipe(
+      tap(() => this._agendamentos.update((lista) => lista.filter((a) => a.id !== id))),
+      catchError(traduzirErro('Não foi possível excluir o agendamento.')),
+    );
   }
 }
 

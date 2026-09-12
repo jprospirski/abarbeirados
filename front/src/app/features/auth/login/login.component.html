@@ -1,0 +1,39 @@
+<div class="entrar">
+  <form class="entrar__painel painel" [formGroup]="form" (ngSubmit)="entrar()">
+    <div class="bloco">
+      <p class="rotulo">Acesso</p>
+      <h1 class="entrar__titulo">Entrar</h1>
+      <p class="entrar__legenda">Use as credenciais da barbearia para continuar.</p>
+
+      <label class="entrar__campo">
+        <span class="entrar__rotulo-campo">Usuário</span>
+        <input
+          class="campo__entrada"
+          type="text"
+          formControlName="usuario"
+          placeholder="admin"
+          autocomplete="username"
+        />
+      </label>
+
+      <label class="entrar__campo">
+        <span class="entrar__rotulo-campo">Senha</span>
+        <input
+          class="campo__entrada"
+          type="password"
+          formControlName="senha"
+          placeholder="••••••"
+          autocomplete="current-password"
+        />
+      </label>
+
+      @if (erro()) {
+        <p class="alerta alerta--erro" role="alert">{{ erro() }}</p>
+      }
+
+      <button type="submit" class="botao-principal entrar__botao" [disabled]="entrando()">
+        {{ entrando() ? 'Entrando...' : 'Entrar' }}
+      </button>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,45 @@
+/* Tela fora do fluxo autenticado: um único cartão centralizado, sem os blocos
+   numerados do agendamento porque aqui só há dois campos. */
+.entrar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.entrar__painel {
+  width: 100%;
+  max-width: 360px;
+}
+
+.entrar__titulo {
+  margin-top: 6px;
+  font-size: 1.8rem;
+}
+
+.entrar__legenda {
+  margin-top: 8px;
+  color: var(--cor-texto-suave);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.entrar__campo {
+  display: block;
+  margin-top: 18px;
+}
+
+.entrar__rotulo-campo {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--cor-texto-suave);
+  font-family: var(--fonte-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.entrar__botao {
+  margin-top: 20px;
+}

@@ -11,14 +11,15 @@ import {
 import { AgendamentoService } from '../../core/services/agendamento.service';
 import {
   DIAS_SEMANA,
-  MESES,
   MESES_CURTOS,
   dataDe,
   horaDe,
   inicioDaSemana,
   paraDataIso,
+  rotuloMes,
   somarDias,
 } from '../../core/util/data.util';
+import { ConfirmarExclusaoComponent } from './confirmar-exclusao/confirmar-exclusao.component';
 
 /** As três formas de olhar a mesma lista. */
 type Visao = 'cartoes' | 'lista' | 'colunas';
@@ -49,7 +50,7 @@ function diaCurto(dataHora: string): string {
 
 @Component({
   selector: 'app-agenda',
-  imports: [CurrencyPipe, RouterLink],
+  imports: [CurrencyPipe, RouterLink, ConfirmarExclusaoComponent],
   templateUrl: './agenda.component.html',
   styleUrl: './agenda.component.scss',
 })
@@ -126,17 +127,7 @@ export class AgendaComponent implements OnInit {
     });
   });
 
-  protected readonly tituloMes = computed(() => {
-    const inicio = this.inicioSemana();
-    const fim = somarDias(inicio, 6);
-    const ano = fim.getFullYear();
-
-    if (inicio.getMonth() === fim.getMonth()) {
-      return `${MESES[inicio.getMonth()]} ${ano}`;
-    }
-
-    return `${MESES[inicio.getMonth()]} — ${MESES[fim.getMonth()]} ${ano}`;
-  });
+  protected readonly tituloMes = computed(() => rotuloMes(this.inicioSemana()));
 
   /** Ordenados por data e hora, com os campos de exibição já prontos. */
   protected readonly agendamentos = computed(() => {
@@ -222,6 +213,54 @@ export class AgendaComponent implements OnInit {
   protected irParaHoje(): void {
     this.inicioSemana.set(inicioDaSemana(new Date()));
     this.diaSelecionado.set(this.hoje);
+  }
+
+  // ------------------------------------------------------------------- status
+
+  // ---------------------------------------------------------------- exclusão
+
+  /** Agendamento com o modal de confirmação aberto, ou null quando fechado. */
+  protected readonly exclusaoAlvo = signal<Agendamento | null>(null);
+  protected readonly excluindo = signal(false);
+  protected readonly erroExclusao = signal<string | null>(null);
+
+  protected pedirExclusao(agendamento: Agendamento): void {
+    this.erroExclusao.set(null);
+    this.exclusaoAlvo.set(agendamento);
+  }
+
+  protected cancelarExclusao(): void {
+    if (this.excluindo()) {
+      return;
+    }
+    this.exclusaoAlvo.set(null);
+    this.erroExclusao.set(null);
+  }
+
+  protected confirmarExclusao(): void {
+    const alvo = this.exclusaoAlvo();
+    if (!alvo) {
+      return;
+    }
+
+    this.excluindo.set(true);
+    this.erroExclusao.set(null);
+
+    this.service
+      .excluir(alvo.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.excluindo.set(false);
+          this.exclusaoAlvo.set(null);
+        },
+        error: (e: unknown) => {
+          this.erroExclusao.set(
+            e instanceof Error ? e.message : 'Não foi possível excluir o agendamento.',
+          );
+          this.excluindo.set(false);
+        },
+      });
   }
 
   // ------------------------------------------------------------------- status

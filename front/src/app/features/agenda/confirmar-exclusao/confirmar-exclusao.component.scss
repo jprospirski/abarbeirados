@@ -1,0 +1,20 @@
+/*
+ * Único lugar do projeto que importa o Bootstrap — por pedido, só para este
+ * modal de confirmação. Como o Angular aplica a encapsulação padrão (attribute
+ * selector por componente) em cima de TUDO que sai deste arquivo, mesmo os
+ * resets globais do Bootstrap (body, h1, etc.) ficam presos aqui dentro: eles
+ * viram seletores que não encontram nada para casar fora deste componente, e
+ * o resto do app continua no kit próprio sem nenhuma interferência.
+ */
+@import 'bootstrap/scss/bootstrap';
+
+/*
+ * O reboot do Bootstrap zera a margem de <p> com um seletor de elemento — que,
+ * já dentro deste componente, carrega o mesmo atributo de encapsulação que o
+ * Angular grava em .alerta, e por isso tem mais especificidade que uma classe
+ * sozinha. Repetido aqui com a tag para empatar a especificidade: a ordem de
+ * declaração (depois do import) é que decide, e o kit próprio volta a valer.
+ */
+p.alerta {
+  margin: 14px 0 0;
+}

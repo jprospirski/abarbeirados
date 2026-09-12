@@ -69,6 +69,21 @@ export const MESES = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
 
+/**
+ * Rótulo do mês da faixa semanal: 'Agosto 2026', ou os dois meses quando a
+ * semana cai na virada ('Julho — Agosto 2026'). `inicio` é o domingo da semana.
+ */
+export function rotuloMes(inicio: Date): string {
+  const fim = somarDias(inicio, 6);
+  const ano = fim.getFullYear();
+
+  if (inicio.getMonth() === fim.getMonth()) {
+    return `${MESES[inicio.getMonth()]} ${ano}`;
+  }
+
+  return `${MESES[inicio.getMonth()]} — ${MESES[fim.getMonth()]} ${ano}`;
+}
+
 /** Os intervalos [início, início+duração) se sobrepõem? */
 export function haConflito(
   inicioA: number,
