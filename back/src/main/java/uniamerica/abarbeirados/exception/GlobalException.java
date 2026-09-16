@@ -12,12 +12,14 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import lombok.extern.slf4j.Slf4j;
 import uniamerica.abarbeirados.dto.error.ApiError;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalException {
 
@@ -67,6 +69,7 @@ public class GlobalException {
     // regra de negócio quebrada (ex: tentar marcar em horário já ocupado).
     @ExceptionHandler(NegocioException.class)
     public ResponseEntity<ApiError> handleBusinessException(NegocioException ex) {
+        log.warn(ex.getMessage());
         ApiError apiError = buildError(HttpStatus.BAD_REQUEST, ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
@@ -74,6 +77,7 @@ public class GlobalException {
     // id que não existe no banco (cliente, serviço ou agendamento).
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiError> handleResourceNotFound(ResourceNotFoundException ex) {
+        log.warn(ex.getMessage());
         ApiError apiError = buildError(HttpStatus.NOT_FOUND, ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
     }
@@ -98,6 +102,7 @@ public class GlobalException {
     // qualquer outro erro não previsto cai aqui como rede de segurança.
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGenericException(Exception ex) {
+        log.error("Erro interno não tratado", ex);
         ApiError apiError = buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno: " + ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiError);
     }

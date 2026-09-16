@@ -14,6 +14,9 @@ public record AgendamentoRequest(
         @NotNull(message = "O serviço é obrigatório")
         Long servicoId,
 
+        @NotNull(message = "O barbeiro é obrigatório")
+        Long barbeiroId,
+
         @NotNull(message = "Data e hora são obrigatórias")
         @Future(message = "A data do agendamento deve ser no futuro")
         LocalDateTime dataHora,

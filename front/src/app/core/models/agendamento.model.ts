@@ -24,6 +24,7 @@ export const STATUS_LABEL: Record<StatusAgendamento, string> = {
 export interface AgendamentoRequest {
   clienteId: number;
   servicoId: number;
+  barbeiroId: number;
   /** LocalDateTime em ISO, ex.: 2026-08-16T14:30 */
   dataHora: string;
   observacoes?: string | null;
@@ -41,6 +42,8 @@ export interface Agendamento {
   clienteTelefone: string;
   servicoId: number;
   servicoNome: string;
+  barbeiroId: number;
+  barbeiroNome: string;
   valor: number;
   duracaoMinutos: number;
   dataHora: string;

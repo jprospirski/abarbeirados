@@ -31,6 +31,10 @@ public class Agendamento {
     @JoinColumn(name = "servico_id", nullable = false)
     private Servico servico;
 
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "barbeiro_id", nullable = false)
+    private Barbeiro barbeiro;
+
     @Column(name = "data_hora", nullable = false)
     private LocalDateTime dataHora;
 
