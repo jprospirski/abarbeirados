@@ -28,7 +28,28 @@
 	</scm>
 	<properties>
 		<java.version>17</java.version>
+		<!--
+			Trem de releases do Spring Cloud usado pelo OpenFeign. O 2025.1.3 e o
+			ultimo GA da linha (alvo Spring Boot 4.0.x) e e o mais novo compativel
+			com o Boot 4.1.0 deste projeto: ainda nao ha linha 2026.x publicada.
+		-->
+		<spring-cloud.version>2025.1.3</spring-cloud.version>
+		<!-- springdoc 3.1.1 e compilado contra o Spring Boot 4.1.0. -->
+		<springdoc.version>3.1.1</springdoc.version>
 	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring-cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -45,6 +66,30 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+
+		<!--
+			Starter, e nao o flyway-core cru: no Spring Boot 4 a autoconfiguracao do
+			Flyway mora neste modulo, e sem ele as migrations simplesmente nao rodam
+			(o boot quebra em "missing table" na validacao do Hibernate).
+
+			A versao do Flyway vem gerenciada pelo Boot 4.1.0 (12.4.0). A partir do
+			Flyway 10 cada banco costuma vir em modulo separado, mas o suporte a H2
+			continua dentro do flyway-core nesta versao — nao precisa do
+			flyway-database-h2.
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-openfeign</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>${springdoc.version}</version>
 		</dependency>
 
 		<dependency>
