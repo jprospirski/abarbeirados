@@ -19,7 +19,7 @@ import {
   rotuloMes,
   somarDias,
 } from '../../core/util/data.util';
-import { ConfirmarExclusaoComponent } from './confirmar-exclusao/confirmar-exclusao.component';
+import { ConfirmarExclusaoComponent } from '../../shared/confirmar-exclusao/confirmar-exclusao.component';
 
 /** As três formas de olhar a mesma lista. */
 type Visao = 'cartoes' | 'lista' | 'colunas';
@@ -221,6 +221,12 @@ export class AgendaComponent implements OnInit {
 
   /** Agendamento com o modal de confirmação aberto, ou null quando fechado. */
   protected readonly exclusaoAlvo = signal<Agendamento | null>(null);
+  /** Frase que vai em negrito no modal: "o agendamento de Fulano". */
+  protected readonly alvoExclusao = computed(() => {
+    const alvo = this.exclusaoAlvo();
+    return alvo ? `o agendamento de ${alvo.clienteNome}` : '';
+  });
+
   protected readonly excluindo = signal(false);
   protected readonly erroExclusao = signal<string | null>(null);
 

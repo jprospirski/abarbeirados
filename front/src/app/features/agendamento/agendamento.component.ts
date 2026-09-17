@@ -14,6 +14,7 @@ import { Observable, map, merge, of, switchMap } from 'rxjs';
 import { Agendamento, Horario } from '../../core/models/agendamento.model';
 import { ItemCarrinho, ItemServico } from '../../core/models/servico.model';
 import { AgendamentoService } from '../../core/services/agendamento.service';
+import { BarbeiroService } from '../../core/services/barbeiro.service';
 import {
   DIAS_SEMANA,
   MESES,
@@ -78,6 +79,7 @@ export class AgendamentoComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly service = inject(AgendamentoService);
+  protected readonly barbeiroService = inject(BarbeiroService);
 
   protected readonly hoje = paraDataIso(new Date());
 
@@ -103,6 +105,7 @@ export class AgendamentoComponent implements OnInit {
       novoEmail: '',
       novoTelefone: '',
       itens: [[] as ItemServico[], Validators.required],
+      barbeiroId: [null as number | null, Validators.required],
       quimicaDuracao: null as number | null,
       quimicaValor: null as number | null,
       data: [this.hoje, Validators.required],
@@ -120,6 +123,25 @@ export class AgendamentoComponent implements OnInit {
   protected readonly modoCliente = computed(() => this.valor().modoCliente);
   protected readonly itens = computed(() => this.valor().itens);
   protected readonly temQuimica = computed(() => this.itens().includes('QUIMICA'));
+
+  /**
+   * Só barbeiro ativo entra no select: o desativado saiu da escala.
+   *
+   * A exceção é o que já está marcado no agendamento em edição. Se o barbeiro
+   * foi desativado depois da marcação, tirá-lo da lista deixaria o select em
+   * branco e o atendente acharia que o campo não foi preenchido — ele continua
+   * aparecendo, para ser lido e trocado.
+   */
+  protected readonly barbeirosAtivos = computed(() => {
+    const escolhido = this.barbeiroId();
+
+    return this.barbeiroService
+      .barbeiros()
+      .filter((barbeiro) => barbeiro.ativo || barbeiro.id === escolhido);
+  });
+
+  /** A grade e o conflito são por barbeiro; sem um escolhido, a agenda é a de todos. */
+  protected readonly barbeiroId = computed(() => this.valor().barbeiroId);
 
   /** O Serviço único que representa a combinação marcada no carrinho. */
   protected readonly servicoResolvido = computed(() =>
@@ -151,6 +173,7 @@ export class AgendamentoComponent implements OnInit {
   protected readonly semana = computed<DiaSemana[]>(() => {
     const inicio = this.inicioSemana();
     const duracao = this.duracao();
+    const barbeiroId = this.barbeiroId();
 
     return Array.from({ length: 7 }, (_, i) => {
       const dia = somarDias(inicio, i);
@@ -160,7 +183,7 @@ export class AgendamentoComponent implements OnInit {
       const lotado =
         !passado &&
         !this.service
-          .horariosDoDia(iso, duracao, this.editandoId() ?? undefined)
+          .horariosDoDia(iso, duracao, this.editandoId() ?? undefined, barbeiroId)
           .some((h) => h.disponivel);
 
       return {
@@ -192,6 +215,11 @@ export class AgendamentoComponent implements OnInit {
       : v.novoNome.trim();
   });
 
+  protected readonly nomeBarbeiro = computed(() => {
+    const id = this.barbeiroId();
+    return this.barbeiroService.barbeiros().find((b) => b.id === id)?.nome ?? '';
+  });
+
   /** 'seg, 17 de agosto' — montado à mão para não depender do locale. */
   protected readonly dataExtenso = computed(() => {
     const [ano, mes, dia] = this.valor().data.split('-').map(Number);
@@ -206,7 +234,12 @@ export class AgendamentoComponent implements OnInit {
    */
   protected readonly horarios = computed<Horario[]>(() =>
     this.service
-      .horariosDoDia(this.valor().data, this.duracao(), this.editandoId() ?? undefined)
+      .horariosDoDia(
+        this.valor().data,
+        this.duracao(),
+        this.editandoId() ?? undefined,
+        this.barbeiroId(),
+      )
       .filter((h) => h.disponivel),
   );
 
@@ -219,10 +252,11 @@ export class AgendamentoComponent implements OnInit {
   });
 
   constructor() {
-    // Mudar serviço, química ou data pode invalidar o horário já escolhido.
+    // Mudar serviço, química, barbeiro ou data pode invalidar o horário já escolhido.
     merge(
       this.form.controls.itens.valueChanges,
       this.form.controls.quimicaDuracao.valueChanges,
+      this.form.controls.barbeiroId.valueChanges,
       this.form.controls.data.valueChanges,
     )
       .pipe(takeUntilDestroyed())
@@ -240,6 +274,21 @@ export class AgendamentoComponent implements OnInit {
     this.service.carregar();
 
     const idParam = this.route.snapshot.paramMap.get('id');
+
+    /*
+     * Marcação nova traz só os ativos — o select não oferece quem saiu da escala.
+     * Na edição vêm todos, porque o barbeiro do agendamento pode ter sido
+     * desativado desde então e precisa aparecer no select para ser lido; quem
+     * esconde os outros inativos é o `barbeirosAtivos`.
+     */
+    this.barbeiroService
+      .listar(!idParam)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        error: () =>
+          this.erro.set('Não foi possível carregar os barbeiros. Confira se o backend está no ar.'),
+      });
+
     if (!idParam) {
       return;
     }
@@ -282,6 +331,7 @@ export class AgendamentoComponent implements OnInit {
       novoEmail: '',
       novoTelefone: '',
       itens,
+      barbeiroId: agendamento.barbeiroId,
       quimicaDuracao: ehQuimica ? agendamento.duracaoMinutos : null,
       quimicaValor: ehQuimica ? agendamento.valor : null,
       data: dataDe(agendamento.dataHora),
@@ -386,6 +436,7 @@ export class AgendamentoComponent implements OnInit {
           const corpo = {
             clienteId,
             servicoId: servico.id,
+            barbeiroId: v.barbeiroId!,
             dataHora: paraDataHora(v.data, v.hora),
             observacoes: v.observacoes,
           };
@@ -404,8 +455,14 @@ export class AgendamentoComponent implements OnInit {
             return;
           }
 
-          // Mantém o dia escolhido: o normal é agendar vários clientes seguidos.
-          this.form.reset({ modoCliente: 'existente', itens: [], data: v.data });
+          // Mantém o dia e o barbeiro escolhidos: o normal é encher a agenda de
+          // um barbeiro num dia, cliente atrás de cliente.
+          this.form.reset({
+            modoCliente: 'existente',
+            itens: [],
+            barbeiroId: v.barbeiroId,
+            data: v.data,
+          });
           this.mostrarObs.set(false);
           this.confirmado.set(resultado);
           this.salvando.set(false);
@@ -440,6 +497,11 @@ export class AgendamentoComponent implements OnInit {
 
   protected get clienteInvalido(): boolean {
     return !!this.form.errors?.['clienteObrigatorio'] && this.form.touched;
+  }
+
+  protected get barbeiroInvalido(): boolean {
+    const controle = this.form.controls.barbeiroId;
+    return controle.invalid && controle.touched;
   }
 
   // ------------------------------------------------------------- auxiliares
@@ -477,6 +539,7 @@ export class AgendamentoComponent implements OnInit {
       v.data,
       this.duracaoDe(v),
       this.editandoId() ?? undefined,
+      v.barbeiroId,
     );
 
     if (!grade.find((h) => h.hora === v.hora)?.disponivel) {

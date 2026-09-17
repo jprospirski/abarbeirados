@@ -142,10 +142,30 @@
         }
       </section>
 
+      <!-- -------------------------------------------------- barbeiro -->
+      <section class="bloco" [class.bloco--erro]="barbeiroInvalido">
+        <div class="bloco__topo">
+          <h2 class="rotulo">03 Barbeiro</h2>
+        </div>
+
+        <select class="campo__entrada" formControlName="barbeiroId" aria-label="Barbeiro">
+          <option [ngValue]="null">Selecione um barbeiro...</option>
+          @for (barbeiro of barbeirosAtivos(); track barbeiro.id) {
+            <option [ngValue]="barbeiro.id">{{ barbeiro.nome }}</option>
+          }
+        </select>
+
+        @if (barbeirosAtivos().length === 0) {
+          <p class="aviso">Nenhum barbeiro ativo cadastrado</p>
+        } @else if (barbeiroInvalido) {
+          <p class="aviso">Escolha quem vai atender</p>
+        }
+      </section>
+
       <!-- ------------------------------------------------------ data -->
       <section class="bloco">
         <div class="bloco__topo">
-          <h2 class="rotulo">03 Data</h2>
+          <h2 class="rotulo">04 Data</h2>
           <span class="bloco__mes">{{ tituloMes() }}</span>
         </div>
 
@@ -192,7 +212,7 @@
       <!-- --------------------------------------------------- horario -->
       <section class="bloco" [class.bloco--erro]="horaInvalida">
         <div class="bloco__topo">
-          <h2 class="rotulo">04 Horário</h2>
+          <h2 class="rotulo">05 Horário</h2>
           <span class="bloco__meta">
             {{ vagasLivres() }} {{ vagasLivres() === 1 ? 'vaga' : 'vagas' }}
           </span>
@@ -252,7 +272,7 @@
     <aside class="trilho">
       <div class="comprovante">
         <div class="comprovante__cabecalho">
-          <h2 class="rotulo">05 Resumo</h2>
+          <h2 class="rotulo">06 Resumo</h2>
           <span class="comprovante__selo">
             {{ confirmado() ? 'Confirmado' : modoEdicao() ? 'Edição' : 'Pré-reserva' }}
           </span>
@@ -268,6 +288,10 @@
           <div class="linha">
             <dt>Serviço</dt>
             <dd>{{ servicoResolvido()?.nome || '—' }}</dd>
+          </div>
+          <div class="linha">
+            <dt>Barbeiro</dt>
+            <dd>{{ nomeBarbeiro() || '—' }}</dd>
           </div>
           <div class="linha">
             <dt>Data</dt>
