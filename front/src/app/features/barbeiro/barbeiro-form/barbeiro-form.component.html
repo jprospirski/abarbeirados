@@ -1,0 +1,100 @@
+<section class="cadastro">
+  <header class="cadastro__topo">
+    <div class="cadastro__id">
+      <p class="rotulo">{{ modoEdicao() ? 'Editando barbeiro #' + editandoId() : 'Novo barbeiro' }}</p>
+      <h1 class="cadastro__titulo">{{ modoEdicao() ? 'Editar barbeiro' : 'Cadastrar barbeiro' }}</h1>
+    </div>
+
+    <a class="botao-secundario" mdbRipple routerLink="/barbeiros">Voltar</a>
+  </header>
+
+  <hr class="regua" />
+
+  @if (carregando()) {
+    <p class="cadastro__estado">Carregando formulário...</p>
+  } @else {
+    <form class="formulario" [formGroup]="form" (ngSubmit)="salvar()">
+      <div class="painel">
+        <!-- ------------------------------------------------ identificação -->
+        <section class="bloco">
+          <div class="bloco__topo">
+            <h2 class="rotulo">01 Barbeiro</h2>
+          </div>
+
+          <mdb-form-control>
+            <input mdbInput type="text" id="nome" class="form-control" formControlName="nome" autocomplete="off" />
+            <label mdbLabel class="form-label" for="nome">Nome do barbeiro</label>
+          </mdb-form-control>
+
+          @if (nomeInvalido) {
+            <p class="aviso">Informe o nome do barbeiro</p>
+          }
+
+          <div class="form-check estado-check">
+            <input
+              mdbCheckbox
+              class="form-check-input"
+              type="checkbox"
+              id="ativo"
+              formControlName="ativo"
+            />
+            <label class="form-check-label" for="ativo">
+              Barbeiro ativo (aparece no formulário de agendamento)
+            </label>
+          </div>
+        </section>
+
+        <!-- ---------------------------------------------------- serviços -->
+        <section class="bloco" [class.bloco--erro]="semServico()">
+          <div class="bloco__topo">
+            <h2 class="rotulo">02 Serviços que atende</h2>
+            <span class="bloco__meta">
+              {{ selecionados().length }} {{ selecionados().length === 1 ? 'marcado' : 'marcados' }}
+            </span>
+          </div>
+
+          @if (servicos().length === 0) {
+            <p class="bloco__nota">
+              Nenhum serviço ativo no catálogo. Cadastre um serviço antes de montar a equipe.
+            </p>
+          } @else {
+            <div class="servicos">
+              @for (servico of servicos(); track servico.id) {
+                <div class="form-check servicos__item">
+                  <input
+                    mdbCheckbox
+                    class="form-check-input"
+                    type="checkbox"
+                    [id]="'servico-' + servico.id"
+                    [checked]="marcado(servico.id)"
+                    (change)="alternarServico(servico.id)"
+                  />
+                  <label class="form-check-label" [for]="'servico-' + servico.id">
+                    {{ servico.nome }}
+                    <span class="servicos__meta">
+                      {{ servico.duracaoMinutos }} min &middot; {{ servico.valor | currency: 'BRL' }}
+                    </span>
+                  </label>
+                </div>
+              }
+            </div>
+          }
+
+          @if (semServico()) {
+            <p class="aviso">Selecione ao menos um serviço</p>
+          }
+        </section>
+      </div>
+
+      @if (erro(); as falha) {
+        <p class="alerta alerta--erro" role="alert">{{ falha }}</p>
+      }
+
+      <div class="formulario__acoes">
+        <button type="submit" class="botao-principal formulario__enviar" mdbRipple [disabled]="salvando()">
+          {{ salvando() ? 'Salvando...' : modoEdicao() ? 'Salvar alterações' : 'Cadastrar barbeiro' }}
+        </button>
+      </div>
+    </form>
+  }
+</section>
