@@ -8,7 +8,7 @@ import uniamerica.abarbeirados.model.Cliente;
 
 @Component
 public class ClienteMapper {
-    
+
     public Cliente forEntity(ClienteRequest request) {
         return Cliente.builder()
                 .nome(request.nome())
