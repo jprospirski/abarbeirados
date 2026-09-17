@@ -1,0 +1,18 @@
+/* A moldura (.cadastro, .tabela, .selo) vem do kit global; aqui fica só a grade
+   de colunas desta listagem. */
+
+.tabela__cabecalho,
+.tabela__linha {
+  grid-template-columns: minmax(0, 1.4fr) 132px minmax(0, 1.4fr) 170px;
+}
+
+@media (max-width: 860px) {
+  .tabela__cabecalho {
+    display: none;
+  }
+
+  .tabela__linha {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+}

@@ -1,0 +1,47 @@
+/*
+ * As classes de modal vêm do MDB, que é global (angular.json). O que sobra para
+ * cá é só reencaixar o modal na paleta do projeto: o MDB pinta o conteúdo de
+ * branco fixo e, no tema escuro, isso sairia como um retângulo claro no meio da
+ * tela.
+ */
+
+.modal-content {
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+}
+
+.modal-title {
+  font-family: var(--fonte-display);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+/* O botão de fechar do MDB é um ícone preto embutido em SVG; no tema escuro
+   precisa inverter para aparecer contra a superfície. */
+.btn-close {
+  filter: invert(var(--inverter-fechar, 0));
+  opacity: 0.6;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+:host-context([data-tema='escuro']) .btn-close {
+  --inverter-fechar: 1;
+}
+
+/*
+ * O reboot do Bootstrap zera a margem de <p> com um seletor de elemento — que,
+ * já dentro deste componente, carrega o mesmo atributo de encapsulação que o
+ * Angular grava em .alerta, e por isso tem mais especificidade que uma classe
+ * sozinha. Repetido aqui com a tag para empatar a especificidade: a ordem de
+ * declaração é que decide, e o kit próprio volta a valer.
+ */
+p.alerta {
+  margin: 14px 0 0;
+}
