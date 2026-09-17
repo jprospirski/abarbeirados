@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, catchError, forkJoin, map, tap, throwError } from 'rxjs';
+import { Observable, catchError, forkJoin, tap, throwError } from 'rxjs';
 
 import {
   Agendamento,
@@ -23,26 +23,35 @@ import {
   paraHora,
   paraMinutos,
 } from '../util/data.util';
+import { traduzirErro } from '../util/erro.util';
+import { ClienteService } from './cliente.service';
+import { ServicoService } from './servico.service';
 
 /**
- * Camada de dados da tela de agendamento.
+ * Camada de dados da tela de agendamento. Fala só com o AgendamentoController.
  *
- * Os dados vêm da API. As três listas ficam em signals carregados uma vez por
- * `carregar()`, e as consultas abaixo (grade de horários, agenda do dia) leem
- * desses signals — por isso continuam síncronas e podem ser usadas direto no
- * template. Só as escritas devolvem Observable.
- *
- *   listarClientes()         GET    /api/clientes
- *   listarServicos()         GET    /api/servicos?apenasAtivos=true
- *   criarCliente(req)        POST   /api/clientes
  *   criar(req, duracao)      POST   /api/agendamentos
+ *   obterPorId(id)           GET    /api/agendamentos/{id}
+ *   atualizar(id, req, dur)  PUT    /api/agendamentos/{id}
  *   atualizarStatus(id, st)  PATCH  /api/agendamentos/{id}/status
+ *   excluir(id)              DELETE /api/agendamentos/{id}
+ *
+ * Cliente e Serviço são de outros controllers, então quem conversa com eles é o
+ * ClienteService e o ServicoService — aqui só existe a delegação que as telas
+ * antigas já usavam (`clientes()`, `servicos()`, `criarCliente()`), para elas
+ * não terem que injetar três services de uma vez.
+ *
+ * As consultas abaixo (grade de horários, agenda do dia) leem dos signals, por
+ * isso continuam síncronas e podem ser usadas direto no template. Só as
+ * escritas devolvem Observable.
  *
  * O proxy.conf.json manda /api para a 8080, então em `ng serve` não há CORS.
  */
 @Injectable({ providedIn: 'root' })
 export class AgendamentoService {
   private readonly http = inject(HttpClient);
+  private readonly clienteService = inject(ClienteService);
+  private readonly servicoService = inject(ServicoService);
 
   readonly abertura = '09:00';
   readonly fechamento = '19:00';
@@ -68,17 +77,17 @@ export class AgendamentoService {
     },
   ];
 
-  private readonly _clientes = signal<Cliente[]>([]);
-  private readonly _servicos = signal<Servico[]>([]);
   private readonly _agendamentos = signal<Agendamento[]>([]);
   private readonly _carregando = signal(false);
   private readonly _erroCarga = signal<string | null>(null);
 
-  readonly clientes = this._clientes.asReadonly();
-  readonly servicos = this._servicos.asReadonly();
   readonly agendamentos = this._agendamentos.asReadonly();
   readonly carregando = this._carregando.asReadonly();
   readonly erroCarga = this._erroCarga.asReadonly();
+
+  /* Repassados de quem é dono deles, para os templates não mudarem. */
+  readonly clientes = this.clienteService.clientes;
+  readonly servicos = this.servicoService.servicos;
 
   private carregado = false;
 
@@ -100,13 +109,12 @@ export class AgendamentoService {
     this._erroCarga.set(null);
 
     forkJoin({
-      clientes: this.http.get<Cliente[]>('/api/clientes'),
-      servicos: this.http.get<Servico[]>('/api/servicos?apenasAtivos=true'),
+      clientes: this.clienteService.listar(),
+      servicos: this.servicoService.listar(true),
       agendamentos: this.http.get<Agendamento[]>('/api/agendamentos'),
     }).subscribe({
-      next: ({ clientes, servicos, agendamentos }) => {
-        this._clientes.set(clientes);
-        this._servicos.set(servicos);
+      next: ({ agendamentos }) => {
+        // Clientes e serviços já foram para os signals dos seus próprios services.
         this._agendamentos.set(agendamentos);
         this._carregando.set(false);
       },
@@ -140,7 +148,21 @@ export class AgendamentoService {
     }
 
     const alvo = normalizar(nome);
-    return this._servicos().find((s) => normalizar(s.nome) === alvo);
+    return this.servicos().find((s) => normalizar(s.nome) === alvo);
+  }
+
+  /**
+   * Caminho inverso de {@link resolverServico}: a partir do nome gravado no
+   * agendamento, devolve os itens do carrinho que precisam ficar marcados ao
+   * reabrir o formulário em modo edição.
+   */
+  itensDoServico(servicoNome: string): ItemServico[] {
+    const alvo = normalizar(servicoNome);
+    const chave = Object.entries(COMBINACOES).find(
+      ([, nome]) => normalizar(nome) === alvo,
+    )?.[0];
+
+    return chave ? (chave.split('|') as ItemServico[]) : [];
   }
 
   /** Quanto sairia comprando item por item — serve para mostrar a economia. */
@@ -154,11 +176,11 @@ export class AgendamentoService {
   // --------------------------------------------------------------- consultas
 
   buscarCliente(id: number): Cliente | undefined {
-    return this._clientes().find((c) => c.id === id);
+    return this.clientes().find((c) => c.id === id);
   }
 
   buscarServico(id: number): Servico | undefined {
-    return this._servicos().find((s) => s.id === id);
+    return this.servicos().find((s) => s.id === id);
   }
 
   /** Em ordem de horário. */
@@ -177,14 +199,24 @@ export class AgendamentoService {
    *
    * Quem decide o conflito é a duração real, não o tamanho do bloco: um corte
    * das 15:00 leva 40 min, termina 15:40 e deixa o bloco das 15:40 livre.
+   *
+   * `barbeiroId` recorta a agenda para um barbeiro só. Sem ele a grade mostra
+   * qualquer bloco já usado por qualquer barbeiro, que era o comportamento de
+   * quando o agendamento não tinha dono.
    */
-  horariosDoDia(data: string, duracaoMinutos: number | null): Horario[] {
+  horariosDoDia(
+    data: string,
+    duracaoMinutos: number | null,
+    ignorarId?: number,
+    barbeiroId?: number | null,
+  ): Horario[] {
     const inicio = paraMinutos(this.abertura);
     const fim = paraMinutos(this.fechamento);
     const duracao = duracaoMinutos && duracaoMinutos > 0 ? duracaoMinutos : this.intervalo;
 
     const ocupados = this.agendaDoDia(data)
-      .filter((a) => a.status !== 'CANCELADO')
+      .filter((a) => a.status !== 'CANCELADO' && a.id !== ignorarId)
+      .filter((a) => !barbeiroId || a.barbeiroId === barbeiroId)
       .map((a) => ({
         inicio: paraMinutos(horaDe(a.dataHora)),
         duracao: a.duracaoMinutos,
@@ -225,55 +257,62 @@ export class AgendamentoService {
 
   // ---------------------------------------------------------------- comandos
 
+  /** Delega ao dono do endpoint; o formulário cadastra cliente novo sem sair da tela. */
   criarCliente(request: ClienteRequest): Observable<Cliente> {
-    const corpo: ClienteRequest = {
-      nome: request.nome.trim(),
-      // Vazio vira null, nunca string vazia — ver o comentário no ClienteRequest.
-      email: request.email?.trim().toLowerCase() || null,
-      telefone: request.telefone.trim(),
-    };
-
-    return this.http.post<Cliente>('/api/clientes', corpo).pipe(
-      tap((cliente) => this._clientes.update((lista) => [...lista, cliente])),
-      catchError(traduzirErro('Não foi possível cadastrar o cliente.')),
-    );
+    return this.clienteService.criar(request);
   }
 
   /**
-   * Cria o agendamento depois de revalidar o conflito de horário.
-   *
-   * A checagem de conflito é feita aqui porque o backend ainda não valida
-   * sobreposição — está anotado como pendência no README. `duracao` vem por
-   * parâmetro só para essa conta; o valor e a duração gravados são os que o
-   * backend copia do serviço.
+   * Revalida o conflito de horário no cliente antes de enviar. O backend também
+   * checa (`NegocioException`), mas a conta local evita a ida ao servidor e dá a
+   * mensagem na hora. `duracao` vem por parâmetro só para essa conta; na edição,
+   * `ignorarId` tira o próprio agendamento da lista de ocupados para ele não
+   * bater contra si mesmo.
    */
-  criar(request: AgendamentoRequest, duracao: number): Observable<Agendamento> {
-    const data = dataDe(request.dataHora);
-    const inicio = paraMinutos(horaDe(request.dataHora));
+  private temConflito(
+    dataHora: string,
+    duracao: number,
+    barbeiroId: number,
+    ignorarId?: number,
+  ): boolean {
+    const inicio = paraMinutos(horaDe(dataHora));
 
-    const conflito = this.agendaDoDia(data)
-      .filter((a) => a.status !== 'CANCELADO')
+    return this.agendaDoDia(dataDe(dataHora))
+      .filter((a) => a.status !== 'CANCELADO' && a.id !== ignorarId)
+      .filter((a) => a.barbeiroId === barbeiroId)
       .some((a) =>
         haConflito(inicio, duracao, paraMinutos(horaDe(a.dataHora)), a.duracaoMinutos),
       );
+  }
 
-    if (conflito) {
+  /** Corpo do POST/PUT: observação em branco vira null, nunca string vazia. */
+  private corpoAgendamento(request: AgendamentoRequest): AgendamentoRequest {
+    return {
+      clienteId: request.clienteId,
+      servicoId: request.servicoId,
+      barbeiroId: request.barbeiroId,
+      dataHora: request.dataHora,
+      observacoes: request.observacoes?.trim() || null,
+    };
+  }
+
+  /**
+   * Cria o agendamento depois de revalidar o conflito de horário. O valor e a
+   * duração gravados são os que o backend copia do serviço.
+   */
+  criar(request: AgendamentoRequest, duracao: number): Observable<Agendamento> {
+    if (this.temConflito(request.dataHora, duracao, request.barbeiroId)) {
       return throwError(
         () => new Error('Esse horário acabou de ser ocupado. Escolha outro na grade.'),
       );
     }
 
-    const corpo: AgendamentoRequest = {
-      clienteId: request.clienteId,
-      servicoId: request.servicoId,
-      dataHora: request.dataHora,
-      observacoes: request.observacoes?.trim() || null,
-    };
-
-    return this.http.post<Agendamento>('/api/agendamentos', corpo).pipe(
-      tap((criado) => this._agendamentos.update((lista) => [...lista, criado])),
-      catchError(traduzirErro('Não foi possível agendar.')),
-    );
+    return this.http
+      .post<Agendamento>('/api/agendamentos', this.corpoAgendamento(request))
+      .pipe(
+        tap((criado) => this._agendamentos.update((lista) => [...lista, criado])),
+        catchError(traduzirErro('Não foi possível agendar.')),
+      );
   }
 
   atualizarStatus(id: number, status: StatusAgendamento): Observable<Agendamento> {
@@ -288,29 +327,42 @@ export class AgendamentoService {
         catchError(traduzirErro('Não foi possível alterar o status.')),
       );
   }
-}
 
-/**
- * Converte o ApiError do backend em Error com a mensagem que ele mandou.
- *
- * O GlobalException devolve sempre {status, error, message, fields}; quando é
- * erro de validação, `fields` traz campo a campo, e é essa a mensagem útil.
- */
-function traduzirErro(padrao: string) {
-  return (resposta: unknown): Observable<never> => {
-    const corpo = (resposta as { error?: ApiError })?.error;
+  /**
+   * Busca direta ao servidor, usada pela tela de edição: ela pode abrir por
+   * link direto, antes da listagem completa terminar de carregar.
+   */
+  obterPorId(id: number): Observable<Agendamento> {
+    return this.http
+      .get<Agendamento>(`/api/agendamentos/${id}`)
+      .pipe(catchError(traduzirErro('Não foi possível carregar o agendamento.')));
+  }
 
-    const detalhe = corpo?.fields
-      ? Object.values(corpo.fields).join(' ')
-      : corpo?.message;
+  atualizar(id: number, request: AgendamentoRequest, duracao: number): Observable<Agendamento> {
+    if (this.temConflito(request.dataHora, duracao, request.barbeiroId, id)) {
+      return throwError(
+        () => new Error('Esse horário acabou de ser ocupado. Escolha outro na grade.'),
+      );
+    }
 
-    return throwError(() => new Error(detalhe || padrao));
-  };
-}
+    return this.http
+      .put<Agendamento>(`/api/agendamentos/${id}`, this.corpoAgendamento(request))
+      .pipe(
+        tap((atualizado) =>
+          this._agendamentos.update((lista) =>
+            lista.map((a) => (a.id === id ? atualizado : a)),
+          ),
+        ),
+        catchError(traduzirErro('Não foi possível atualizar o agendamento.')),
+      );
+  }
 
-interface ApiError {
-  message?: string;
-  fields?: Record<string, string> | null;
+  excluir(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/agendamentos/${id}`).pipe(
+      tap(() => this._agendamentos.update((lista) => lista.filter((a) => a.id !== id))),
+      catchError(traduzirErro('Não foi possível excluir o agendamento.')),
+    );
+  }
 }
 
 // -------------------------------------------------------------- catalogo
