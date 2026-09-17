@@ -3,7 +3,7 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header border-0 pb-0">
-          <h5 class="modal-title" id="tituloConfirmarExclusao">Excluir agendamento</h5>
+          <h5 class="modal-title" id="tituloConfirmarExclusao">{{ titulo }}</h5>
           <button
             type="button"
             class="btn-close"
@@ -15,8 +15,8 @@
 
         <div class="modal-body">
           <p class="mb-0">
-            Tem certeza que deseja excluir o agendamento de
-            <strong>{{ nomeCliente }}</strong>? Essa ação não pode ser desfeita.
+            Tem certeza que deseja excluir
+            <strong>{{ alvo }}</strong>? Essa ação não pode ser desfeita.
           </p>
 
           @if (erro) {
@@ -28,6 +28,7 @@
           <button
             type="button"
             class="btn btn-outline-secondary"
+            mdbRipple
             [disabled]="excluindo"
             (click)="cancelar.emit()"
           >
@@ -36,6 +37,7 @@
           <button
             type="button"
             class="btn btn-danger"
+            mdbRipple
             [disabled]="excluindo"
             (click)="confirmar.emit()"
           >
