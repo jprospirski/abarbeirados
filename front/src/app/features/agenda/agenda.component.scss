@@ -306,13 +306,9 @@
   }
 }
 
-/* Mesmo par de ações reaparece nas três visões — todas puxam a cor de perigo
-   só no hover, para não competir com o botão de status enquanto em repouso. */
-.botao-secundario--perigo:hover {
-  border-color: var(--cor-perigo);
-  background: var(--cor-perigo-fundo);
-  color: var(--cor-perigo-texto);
-}
+/* O par de ações (editar/excluir) reaparece nas três visões e agora vem do kit
+   global — `.botao-secundario--perigo` mora no styles.scss, junto das telas de
+   cadastro que passaram a usar o mesmo botão. */
 
 /* ================================================================ lista == */
 
@@ -326,7 +322,7 @@
 .tabela__cabecalho,
 .tabela__linha {
   display: grid;
-  grid-template-columns: 92px minmax(0, 1.2fr) minmax(0, 1.2fr) 96px 116px 148px;
+  grid-template-columns: 88px minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 0.9fr) 92px 112px 148px;
   gap: 14px;
   align-items: center;
   padding: 11px 16px;
@@ -661,4 +657,29 @@
   .estado {
     width: 100%;
   }
+}
+
+/* O barbeiro entra abaixo do serviço nas três visões: é a segunda coisa que o
+   atendente procura no cartão, depois de quem vai ser atendido. */
+
+.cartao__barbeiro {
+  margin-top: 2px;
+  color: var(--cor-texto-fraco);
+  font-family: var(--fonte-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+}
+
+.ficha__barbeiro {
+  margin-top: 1px;
+  color: var(--cor-texto-fraco);
+  font-family: var(--fonte-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.tabela__fraco {
+  min-width: 0;
+  color: var(--cor-texto-suave);
+  overflow-wrap: anywhere;
 }
