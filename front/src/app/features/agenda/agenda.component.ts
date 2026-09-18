@@ -19,6 +19,7 @@ import {
   paraDataIso,
   somarDias,
 } from '../../core/util/data.util';
+import { ConfirmarExclusaoComponent } from '../../shared/confirmar-exclusao/confirmar-exclusao.component';
 
 /** As três formas de olhar a mesma lista. */
 type Visao = 'cartoes' | 'lista' | 'colunas';
@@ -222,6 +223,60 @@ export class AgendaComponent implements OnInit {
   protected irParaHoje(): void {
     this.inicioSemana.set(inicioDaSemana(new Date()));
     this.diaSelecionado.set(this.hoje);
+  }
+
+  // ------------------------------------------------------------------- status
+
+  // ---------------------------------------------------------------- exclusão
+
+  /** Agendamento com o modal de confirmação aberto, ou null quando fechado. */
+  protected readonly exclusaoAlvo = signal<Agendamento | null>(null);
+  /** Frase que vai em negrito no modal: "o agendamento de Fulano". */
+  protected readonly alvoExclusao = computed(() => {
+    const alvo = this.exclusaoAlvo();
+    return alvo ? `o agendamento de ${alvo.clienteNome}` : '';
+  });
+
+  protected readonly excluindo = signal(false);
+  protected readonly erroExclusao = signal<string | null>(null);
+
+  protected pedirExclusao(agendamento: Agendamento): void {
+    this.erroExclusao.set(null);
+    this.exclusaoAlvo.set(agendamento);
+  }
+
+  protected cancelarExclusao(): void {
+    if (this.excluindo()) {
+      return;
+    }
+    this.exclusaoAlvo.set(null);
+    this.erroExclusao.set(null);
+  }
+
+  protected confirmarExclusao(): void {
+    const alvo = this.exclusaoAlvo();
+    if (!alvo) {
+      return;
+    }
+
+    this.excluindo.set(true);
+    this.erroExclusao.set(null);
+
+    this.service
+      .excluir(alvo.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.excluindo.set(false);
+          this.exclusaoAlvo.set(null);
+        },
+        error: (e: unknown) => {
+          this.erroExclusao.set(
+            e instanceof Error ? e.message : 'Não foi possível excluir o agendamento.',
+          );
+          this.excluindo.set(false);
+        },
+      });
   }
 
   // ------------------------------------------------------------------- status
