@@ -1,7 +1,6 @@
 package uniamerica.abarbeirados.service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -12,25 +11,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import uniamerica.abarbeirados.dto.agendamento.AgendaDoDiaResponse;
 import uniamerica.abarbeirados.dto.agendamento.AgendamentoRequest;
 import uniamerica.abarbeirados.dto.agendamento.AgendamentoResponse;
 import uniamerica.abarbeirados.dto.agendamento.AtualizarStatusRequest;
-import uniamerica.abarbeirados.exception.NegocioException;
 import uniamerica.abarbeirados.exception.ResourceNotFoundException;
 import uniamerica.abarbeirados.mapper.AgendamentoMapper;
 import uniamerica.abarbeirados.model.Agendamento;
-import uniamerica.abarbeirados.model.Barbeiro;
 import uniamerica.abarbeirados.model.Cliente;
 import uniamerica.abarbeirados.model.Servico;
-import uniamerica.abarbeirados.model.StatusAgendamento;
 import uniamerica.abarbeirados.repository.AgendamentoRepository;
-import uniamerica.abarbeirados.repository.BarbeiroRepository;
 import uniamerica.abarbeirados.repository.ClienteRepository;
 import uniamerica.abarbeirados.repository.ServicoRepository;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AgendamentoService {
@@ -38,24 +31,15 @@ public class AgendamentoService {
     private final AgendamentoRepository agendamentoRepository;
     private final ClienteRepository clienteRepository;
     private final ServicoRepository servicoRepository;
-    private final BarbeiroRepository barbeiroRepository;
     private final AgendamentoMapper agendamentoMapper;
 
     @Transactional
     public AgendamentoResponse criar(AgendamentoRequest request) {
         Cliente cliente = buscarCliente(request.clienteId());
         Servico servico = buscarServico(request.servicoId());
-        Barbeiro barbeiro = buscarBarbeiro(request.barbeiroId());
 
-        validarConflito(barbeiro, request.dataHora(), servico.getDuracaoMinutos(), null);
-
-        Agendamento agendamento = agendamentoRepository.save(
-                agendamentoMapper.forEntity(request, cliente, servico, barbeiro));
-
-        log.info("Agendamento {} criado para cliente {} com barbeiro {} em {}",
-                agendamento.getId(), cliente.getNome(), barbeiro.getNome(), request.dataHora());
-
-        return agendamentoMapper.forResponse(agendamento);
+        Agendamento agendamento = agendamentoMapper.forEntity(request, cliente, servico);
+        return agendamentoMapper.forResponse(agendamentoRepository.save(agendamento));
     }
 
     @Transactional(readOnly = true)
@@ -94,17 +78,9 @@ public class AgendamentoService {
         Agendamento agendamento = buscarEntidadePorId(id);
         Cliente cliente = buscarCliente(request.clienteId());
         Servico servico = buscarServico(request.servicoId());
-        Barbeiro barbeiro = buscarBarbeiro(request.barbeiroId());
 
-        validarConflito(barbeiro, request.dataHora(), servico.getDuracaoMinutos(), id);
-
-        agendamentoMapper.updateEntity(request, agendamento, cliente, servico, barbeiro);
-        agendamentoRepository.save(agendamento);
-
-        log.info("Agendamento {} atualizado para cliente {} com barbeiro {} em {}",
-                agendamento.getId(), cliente.getNome(), barbeiro.getNome(), request.dataHora());
-
-        return agendamentoMapper.forResponse(agendamento);
+        agendamentoMapper.updateEntity(request, agendamento, cliente, servico);
+        return agendamentoMapper.forResponse(agendamentoRepository.save(agendamento));
     }
 
     @Transactional
@@ -119,37 +95,6 @@ public class AgendamentoService {
     public void excluir(Long id) {
         Agendamento agendamento = buscarEntidadePorId(id);
         agendamentoRepository.delete(agendamento);
-
-        log.info("Agendamento {} excluído (cliente {}, barbeiro {})",
-                id, agendamento.getCliente().getNome(), agendamento.getBarbeiro().getNome());
-    }
-
-    /**
-     * Um barbeiro não pode ter dois atendimentos que se sobreponham.
-     *
-     * A comparação é entre intervalos [início, início + duração), e não entre
-     * horários de início: um corte de 40 min marcado às 15:00 bloqueia as 15:20,
-     * mas libera as 15:40. Cancelado não ocupa vaga, e na edição o próprio
-     * agendamento sai da checagem para não bater contra si mesmo.
-     */
-    private void validarConflito(Barbeiro barbeiro, LocalDateTime dataHora, Integer duracaoMinutos, Long ignorarId) {
-        LocalDateTime inicioNovo = dataHora;
-        LocalDateTime fimNovo = dataHora.plusMinutes(duracaoMinutos);
-
-        boolean conflita = agendamentoRepository.findAll().stream()
-                .filter(agendamento -> agendamento.getBarbeiro().getId().equals(barbeiro.getId()))
-                .filter(agendamento -> agendamento.getStatus() != StatusAgendamento.CANCELADO)
-                // Com ignorarId nulo nenhum id bate, entao criar() checa a agenda inteira.
-                .filter(agendamento -> !agendamento.getId().equals(ignorarId))
-                .anyMatch(agendamento -> {
-                    LocalDateTime inicioExistente = agendamento.getDataHora();
-                    LocalDateTime fimExistente = inicioExistente.plusMinutes(agendamento.getDuracaoMinutos());
-                    return inicioNovo.isBefore(fimExistente) && inicioExistente.isBefore(fimNovo);
-                });
-
-        if (conflita) {
-            throw new NegocioException("Já existe um agendamento para esse barbeiro nesse horário.");
-        }
     }
 
     /** Busca livre pelo nome do cliente ou do serviço. */
@@ -177,10 +122,5 @@ public class AgendamentoService {
     private Servico buscarServico(Long id) {
         return servicoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Serviço não encontrado com id " + id));
-    }
-
-    private Barbeiro buscarBarbeiro(Long id) {
-        return barbeiroRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Barbeiro não encontrado com id " + id));
     }
 }

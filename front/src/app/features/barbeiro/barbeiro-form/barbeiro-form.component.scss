@@ -1,0 +1,35 @@
+/* Moldura (.cadastro, .formulario, .painel, .bloco) vem do kit global. */
+
+.estado-check {
+  margin-top: 18px;
+}
+
+/* Uma coluna por serviço enquanto couber; nada de rolagem horizontal quando o
+   catálogo crescer. */
+.servicos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px 20px;
+}
+
+.servicos__item {
+  min-width: 0;
+}
+
+.servicos__meta {
+  display: block;
+  color: var(--cor-texto-fraco);
+  font-family: var(--fonte-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+}
+
+.bloco__nota {
+  color: var(--cor-texto-fraco);
+  font-size: 12.5px;
+}
+
+.formulario__enviar {
+  width: auto;
+  min-width: 260px;
+}

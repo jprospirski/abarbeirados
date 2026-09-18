@@ -8,8 +8,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, map, merge, of, switchMap } from 'rxjs';
+import { Observable, map, of, switchMap } from 'rxjs';
 
 import { Agendamento, Horario } from '../../core/models/agendamento.model';
 import { ItemCarrinho, ItemServico } from '../../core/models/servico.model';
@@ -19,14 +18,11 @@ import {
   DIAS_SEMANA,
   MESES,
   MESES_CURTOS,
-  dataDe,
-  horaDe,
   inicioDaSemana,
   paraDataHora,
   paraDataIso,
   paraHora,
   paraMinutos,
-  rotuloMes,
   somarDias,
 } from '../../core/util/data.util';
 
@@ -76,8 +72,6 @@ function quimicaCompleta(grupo: AbstractControl): ValidationErrors | null {
 export class AgendamentoComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   protected readonly service = inject(AgendamentoService);
   protected readonly barbeiroService = inject(BarbeiroService);
 
@@ -85,14 +79,10 @@ export class AgendamentoComponent implements OnInit {
 
   protected readonly erro = signal<string | null>(null);
   protected readonly confirmado = signal<Agendamento | null>(null);
-  /** Trava o botão enquanto o POST/PUT está em voo, para não duplicar o envio. */
+  /** Trava o botão enquanto o POST está em voo, para não agendar em duplicata. */
   protected readonly salvando = signal(false);
   /** Começa recolhida — é o campo menos usado da tela. */
   protected readonly mostrarObs = signal(false);
-
-  /** Id do agendamento em edição, ou null quando a tela é "Novo agendamento". */
-  protected readonly editandoId = signal<number | null>(null);
-  protected readonly modoEdicao = computed(() => this.editandoId() !== null);
 
   /** Domingo da semana que está aparecendo na faixa de datas. */
   private readonly inicioSemana = signal(inicioDaSemana(new Date()));
@@ -199,7 +189,18 @@ export class AgendamentoComponent implements OnInit {
     });
   });
 
-  protected readonly tituloMes = computed(() => rotuloMes(this.inicioSemana()));
+  /** 'Agosto 2026', ou os dois meses quando a semana cai na virada. */
+  protected readonly tituloMes = computed(() => {
+    const inicio = this.inicioSemana();
+    const fim = somarDias(inicio, 6);
+    const ano = fim.getFullYear();
+
+    if (inicio.getMonth() === fim.getMonth()) {
+      return `${MESES[inicio.getMonth()]} ${ano}`;
+    }
+
+    return `${MESES[inicio.getMonth()]} — ${MESES[fim.getMonth()]} ${ano}`;
+  });
 
   /** Trava a seta de voltar em semanas que já passaram por inteiro. */
   protected readonly podeVoltar = computed(
@@ -428,8 +429,6 @@ export class AgendamentoComponent implements OnInit {
             })
             .pipe(map((cliente) => cliente.id));
 
-    const editandoId = this.editandoId();
-
     clienteId$
       .pipe(
         switchMap((clienteId) => {
@@ -464,17 +463,11 @@ export class AgendamentoComponent implements OnInit {
             data: v.data,
           });
           this.mostrarObs.set(false);
-          this.confirmado.set(resultado);
+          this.confirmado.set(criado);
           this.salvando.set(false);
         },
         error: (e: unknown) => {
-          this.erro.set(
-            e instanceof Error
-              ? e.message
-              : editandoId
-                ? 'Não foi possível atualizar o agendamento.'
-                : 'Não foi possível agendar.',
-          );
+          this.erro.set(e instanceof Error ? e.message : 'Não foi possível agendar.');
           this.salvando.set(false);
         },
       });

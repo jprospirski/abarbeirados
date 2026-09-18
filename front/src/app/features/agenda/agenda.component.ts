@@ -11,12 +11,12 @@ import {
 import { AgendamentoService } from '../../core/services/agendamento.service';
 import {
   DIAS_SEMANA,
+  MESES,
   MESES_CURTOS,
   dataDe,
   horaDe,
   inicioDaSemana,
   paraDataIso,
-  rotuloMes,
   somarDias,
 } from '../../core/util/data.util';
 import { ConfirmarExclusaoComponent } from '../../shared/confirmar-exclusao/confirmar-exclusao.component';
@@ -50,7 +50,7 @@ function diaCurto(dataHora: string): string {
 
 @Component({
   selector: 'app-agenda',
-  imports: [CurrencyPipe, RouterLink, ConfirmarExclusaoComponent],
+  imports: [CurrencyPipe, RouterLink],
   templateUrl: './agenda.component.html',
   styleUrl: './agenda.component.scss',
 })
@@ -127,7 +127,17 @@ export class AgendaComponent implements OnInit {
     });
   });
 
-  protected readonly tituloMes = computed(() => rotuloMes(this.inicioSemana()));
+  protected readonly tituloMes = computed(() => {
+    const inicio = this.inicioSemana();
+    const fim = somarDias(inicio, 6);
+    const ano = fim.getFullYear();
+
+    if (inicio.getMonth() === fim.getMonth()) {
+      return `${MESES[inicio.getMonth()]} ${ano}`;
+    }
+
+    return `${MESES[inicio.getMonth()]} — ${MESES[fim.getMonth()]} ${ano}`;
+  });
 
   /** Ordenados por data e hora, com os campos de exibição já prontos. */
   protected readonly agendamentos = computed(() => {

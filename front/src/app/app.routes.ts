@@ -10,11 +10,12 @@ import { authGuard } from './core/guards/auth.guard';
  * `/clientes`, `/clientes/novo`, `/clientes/:id/editar`.
  */
 export const routes: Routes = [
+  { path: '', pathMatch: 'full', redirectTo: 'agendamentos' },
   {
-    path: 'login',
-    title: 'Entrar | Abarbeirados',
+    path: 'agendamentos',
+    title: 'Agendamentos | Abarbeirados',
     loadComponent: () =>
-      import('./features/auth/login/login.component').then((m) => m.LoginComponent),
+      import('./features/agenda/agenda.component').then((m) => m.AgendaComponent),
   },
   {
     path: '',
@@ -138,4 +139,5 @@ export const routes: Routes = [
       { path: '**', redirectTo: 'agendamentos' },
     ],
   },
+  { path: '**', redirectTo: 'agendamentos' },
 ];

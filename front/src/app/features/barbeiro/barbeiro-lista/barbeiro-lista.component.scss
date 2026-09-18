@@ -1,0 +1,21 @@
+/* A moldura (.cadastro, .tabela, .selo) vem do kit global. */
+
+.tabela__cabecalho,
+.tabela__linha {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr) 96px 170px;
+}
+
+.tabela__linha.is-inativo {
+  color: var(--cor-texto-fraco);
+}
+
+@media (max-width: 900px) {
+  .tabela__cabecalho {
+    display: none;
+  }
+
+  .tabela__linha {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+}

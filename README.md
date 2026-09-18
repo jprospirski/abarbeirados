@@ -4,8 +4,8 @@ Sistema de gestão para barbearia — projeto acadêmico do 4º período de Enge
 Software / Análise e Desenvolvimento de Sistemas da **Uniamerica**, atendendo a uma
 demanda real encaminhada à faculdade.
 
-Backend Spring Boot com CRUD de Cliente, Serviço e Agendamento; frontend Angular
-consumindo a API. Roda ponta a ponta, com H2 em memória.
+Backend Spring Boot com CRUD de Cliente, Serviço, Barbeiro e Agendamento; frontend
+Angular consumindo a API. Roda ponta a ponta, com H2 em memória.
 
 ## Equipe
 
@@ -44,6 +44,13 @@ Angular 19.2 · TypeScript 5.7 · Node.js 20.11+
 
 Base: `http://localhost:8080`
 
+Documentação interativa em **`/swagger-ui/index.html`** — os quatro controllers
+(`Cliente`, `Servico`, `Barbeiro`, `Agendamento`) com os DTOs de request e response,
+e os endpoints executáveis direto da página.
+
+`GET /api/clientes/cep/{cep}` consulta a ViaCEP por Feign, e o formulário de cliente
+usa a resposta para conferir o endereço — o CEP não é gravado na tabela `clientes`.
+
 ---
 
 ## Como executar
@@ -72,9 +79,15 @@ SDK do projeto e rodar `AbarbeiradosApplication`.
 `jdbc:h2:mem:abarbeirados`, usuário `sa`, senha em branco.
 
 **Primeiro uso** — o banco é em memória e nasce vazio, perdendo os dados a cada
-reinicialização. Não é preciso cadastrar nada à mão: o `ServicoSeeder` roda na
-inicialização do backend e, sempre que a tabela `servico` está vazia, insere os
-8 serviços (itens avulsos e combinações) que o formulário de marcação espera.
+reinicialização. Não é preciso cadastrar nada à mão: o **Flyway** é o dono do schema
+e roda as migrations de `back/src/main/resources/db/migration` a cada boot —
+`V1__schema_inicial.sql` cria as tabelas e `V2__seed_servicos.sql` insere os 8
+serviços (itens avulsos e combinações) que o formulário de marcação espera. O
+Hibernate fica em `ddl-auto=validate` e só confere que as entidades batem com o que
+as migrations criaram.
+
+Barbeiro não vem semeado: cadastre ao menos um em **Barbeiros** antes de marcar o
+primeiro agendamento, porque o campo é obrigatório no formulário.
 
 ---
 

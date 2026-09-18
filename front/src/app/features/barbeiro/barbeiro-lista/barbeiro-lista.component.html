@@ -1,0 +1,72 @@
+<section class="cadastro">
+  <header class="cadastro__topo">
+    <div class="cadastro__id">
+      <p class="rotulo">04 Equipe</p>
+      <h1 class="cadastro__titulo">Barbeiros</h1>
+    </div>
+
+    <div class="cadastro__acoes">
+      <a class="botao-secundario" mdbRipple routerLink="/barbeiros/novo">Novo barbeiro</a>
+    </div>
+  </header>
+
+  <hr class="regua" />
+
+  @if (erro(); as falha) {
+    <p class="alerta alerta--erro" role="alert">{{ falha }}</p>
+  }
+
+  @if (carregando()) {
+    <p class="cadastro__estado">Carregando barbeiros...</p>
+  } @else if (barbeiros().length === 0) {
+    <p class="cadastro__estado">Nenhum barbeiro cadastrado ainda.</p>
+  } @else {
+    <p class="cadastro__meta">
+      {{ barbeiros().length }} {{ barbeiros().length === 1 ? 'barbeiro' : 'barbeiros' }}
+    </p>
+
+    <div class="tabela">
+      <div class="tabela__cabecalho" aria-hidden="true">
+        <span>Nome</span>
+        <span>Serviços que atende</span>
+        <span>Estado</span>
+        <span>Ações</span>
+      </div>
+
+      @for (barbeiro of barbeiros(); track barbeiro.id) {
+        <div class="tabela__linha" [class.is-inativo]="!barbeiro.ativo">
+          <span class="tabela__destaque">{{ barbeiro.nome }}</span>
+          <span class="tabela__fraco">{{ barbeiro.servicosTexto || '—' }}</span>
+          <span>
+            <span class="selo" [class.selo--ativo]="barbeiro.ativo" [class.selo--inativo]="!barbeiro.ativo">
+              {{ barbeiro.ativo ? 'Ativo' : 'Inativo' }}
+            </span>
+          </span>
+          <div class="tabela__acoes">
+            <a class="botao-secundario" mdbRipple [routerLink]="['/barbeiros', barbeiro.id, 'editar']">
+              Editar
+            </a>
+            <button
+              type="button"
+              class="botao-secundario botao-secundario--perigo"
+              mdbRipple
+              (click)="pedirExclusao(barbeiro)"
+            >
+              Excluir
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>
+
+<app-confirmar-exclusao
+  [aberto]="!!exclusaoAlvo()"
+  titulo="Excluir barbeiro"
+  [alvo]="alvoExclusao()"
+  [erro]="erroExclusao()"
+  [excluindo]="excluindo()"
+  (confirmar)="confirmarExclusao()"
+  (cancelar)="cancelarExclusao()"
+/>

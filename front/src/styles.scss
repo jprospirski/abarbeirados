@@ -550,3 +550,248 @@ textarea {
     color: var(--cor-ok-texto);
   }
 }
+
+/* =============================================================================
+   Telas de cadastro — Cliente, Serviço e Barbeiro.
+
+   As três listagens e os três formulários têm a mesma moldura: cabeçalho com
+   rótulo numerado, fio de 1px e um corpo (tabela ou painel). O que muda de uma
+   para outra é só a grade de colunas da tabela, que fica no SCSS de cada
+   componente. Mora aqui, e não repetido três vezes, porque é kit de UI e não
+   regra de tela — mesmo critério de `.painel` e `.alternador` acima.
+   ========================================================================== */
+
+.cadastro {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 28px 32px 48px;
+}
+
+.cadastro__topo {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.cadastro__id {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cadastro__titulo {
+  font-size: clamp(1.7rem, 3.4vw, 2.5rem);
+}
+
+.cadastro__acoes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cadastro__busca {
+  width: 220px;
+}
+
+.cadastro__estado {
+  padding: 40px 0;
+  color: var(--cor-texto-suave);
+  font-family: var(--fonte-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.cadastro__meta {
+  color: var(--cor-texto-fraco);
+  font-family: var(--fonte-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* A tabela é a mesma da visão em lista da agenda; a diferença é que cada tela
+   define a própria `grid-template-columns` em cima destas regras. */
+.tabela {
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+  overflow: hidden;
+}
+
+.tabela__cabecalho,
+.tabela__linha {
+  display: grid;
+  gap: 14px;
+  align-items: center;
+  padding: 11px 16px;
+}
+
+.tabela__cabecalho {
+  border-bottom: 1px solid var(--cor-borda);
+  color: var(--cor-texto-fraco);
+  font-family: var(--fonte-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.tabela__linha {
+  font-size: 13.5px;
+  transition: background 0.12s ease;
+
+  &+& {
+    border-top: 1px solid var(--cor-borda);
+  }
+
+  &:hover {
+    background: var(--cor-superficie-alta);
+  }
+}
+
+.tabela__acoes {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+
+  /* Botão de tabela é mais estreito que o do cabeçalho: são dois ou três por
+     linha e, com o padding cheio, quebravam para baixo e esticavam a linha ao
+     dobro da altura. */
+  .botao-secundario {
+    padding: 7px 10px;
+    font-size: 10px;
+  }
+}
+
+.tabela__destaque {
+  font-weight: 600;
+}
+
+.tabela__mono {
+  font-family: var(--fonte-mono);
+  font-size: 12.5px;
+}
+
+.tabela__fraco {
+  min-width: 0;
+  color: var(--cor-texto-fraco);
+  overflow-wrap: anywhere;
+}
+
+/** Selo de estado (ativo/inativo) nas listagens de Serviço e Barbeiro. */
+.selo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-minimo);
+  font-family: var(--fonte-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  &--ativo {
+    border-color: transparent;
+    background: var(--cor-ok-fundo);
+    color: var(--cor-ok-texto);
+  }
+
+  &--inativo {
+    color: var(--cor-texto-fraco);
+  }
+}
+
+/** Botão de ação destrutiva: mesma forma do secundário, só que em vermelho. */
+.botao-secundario--perigo:hover {
+  border-color: var(--cor-perigo);
+  background: var(--cor-perigo-fundo);
+  color: var(--cor-perigo-texto);
+}
+
+/* =============================================================================
+   Formulários de cadastro.
+
+   O MDB entra aqui: `mdb-form-control` com `mdbInput`/`mdbLabel` dá o rótulo
+   flutuante, e estas regras reencaixam o componente na paleta do projeto — sem
+   elas o campo sai branco com borda cinza, que é o tema padrão do MDB e destoa
+   do resto da interface.
+   ========================================================================== */
+
+.formulario {
+  display: grid;
+  gap: 16px;
+  max-width: 720px;
+}
+
+.formulario__par {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.formulario__acoes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.form-control {
+  border-color: var(--cor-borda-forte);
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+
+  &:focus {
+    border-color: var(--cor-marca);
+    box-shadow: inset 0 0 0 1px var(--cor-marca);
+    background: var(--cor-fundo);
+    color: var(--cor-texto);
+  }
+}
+
+.form-label,
+.form-check-label {
+  color: var(--cor-texto-suave);
+}
+
+.form-outline .form-control~.form-notch div {
+  border-color: var(--cor-borda-forte);
+}
+
+.form-outline .form-control:focus~.form-notch div {
+  border-color: var(--cor-marca);
+}
+
+.form-outline .form-control:focus~.form-label {
+  color: var(--cor-marca);
+}
+
+/*
+ * Checkbox do MDB na paleta do projeto. Ele nasce branco com marcação azul, o
+ * que no tema escuro aparece como dois quadrados claros no meio do painel — aqui
+ * ele vira o mesmo campo dourado dos outros estados marcados da interface.
+ */
+.form-check-input[type='checkbox'] {
+  border-color: var(--cor-borda-forte);
+  background-color: transparent;
+
+  &:checked {
+    border-color: var(--cor-marca-cheia);
+    background-color: var(--cor-marca-cheia);
+
+    &::after {
+      border-color: var(--cor-sobre-marca);
+    }
+  }
+
+  &:focus {
+    border-color: var(--cor-marca);
+  }
+}

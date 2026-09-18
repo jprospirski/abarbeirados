@@ -1,0 +1,104 @@
+<section class="cadastro">
+  <header class="cadastro__topo">
+    <div class="cadastro__id">
+      <p class="rotulo">{{ modoEdicao() ? 'Editando cliente #' + editandoId() : 'Novo cliente' }}</p>
+      <h1 class="cadastro__titulo">{{ modoEdicao() ? 'Editar cliente' : 'Cadastrar cliente' }}</h1>
+    </div>
+
+    <a class="botao-secundario" mdbRipple routerLink="/clientes">Voltar</a>
+  </header>
+
+  <hr class="regua" />
+
+  <form class="formulario" [formGroup]="form" (ngSubmit)="salvar()">
+    <div class="painel">
+      <!-- --------------------------------------------------- dados -->
+      <section class="bloco">
+        <div class="bloco__topo">
+          <h2 class="rotulo">01 Dados</h2>
+        </div>
+
+        <div class="formulario__par">
+          <mdb-form-control>
+            <input mdbInput type="text" id="nome" class="form-control" formControlName="nome" autocomplete="off" />
+            <label mdbLabel class="form-label" for="nome">Nome completo</label>
+          </mdb-form-control>
+
+          <mdb-form-control>
+            <input mdbInput type="tel" id="telefone" class="form-control" formControlName="telefone" autocomplete="off" />
+            <label mdbLabel class="form-label" for="telefone">Telefone</label>
+          </mdb-form-control>
+        </div>
+
+        <div class="formulario__par formulario__par--espacado">
+          <mdb-form-control>
+            <input mdbInput type="email" id="email" class="form-control" formControlName="email" autocomplete="off" />
+            <label mdbLabel class="form-label" for="email">E-mail (opcional)</label>
+          </mdb-form-control>
+        </div>
+
+        @if (invalido('nome') || invalido('telefone')) {
+          <p class="aviso">Nome e telefone são obrigatórios</p>
+        } @else if (invalido('email')) {
+          <p class="aviso">Informe um e-mail válido ou deixe o campo em branco</p>
+        }
+      </section>
+
+      <!-- -------------------------------------------------- endereço -->
+      <section class="bloco">
+        <div class="bloco__topo">
+          <h2 class="rotulo">02 Endereço</h2>
+          <span class="bloco__meta">Só confirmação · não é gravado</span>
+        </div>
+
+        <div class="cep">
+          <mdb-form-control class="cep__campo">
+            <input mdbInput type="text" id="cep" class="form-control" formControlName="cep" maxlength="9" autocomplete="off" />
+            <label mdbLabel class="form-label" for="cep">CEP</label>
+          </mdb-form-control>
+
+          <button
+            type="button"
+            class="botao-secundario"
+            mdbRipple
+            [disabled]="buscandoCep()"
+            (click)="buscarCep()"
+          >
+            {{ buscandoCep() ? 'Buscando...' : 'Buscar CEP' }}
+          </button>
+        </div>
+
+        @if (erroCep(); as falha) {
+          <p class="aviso">{{ falha }}</p>
+        }
+
+        @if (endereco(); as e) {
+          <dl class="endereco">
+            <div class="linha">
+              <dt>Logradouro</dt>
+              <dd>{{ e.logradouro || '—' }}</dd>
+            </div>
+            <div class="linha">
+              <dt>Bairro</dt>
+              <dd>{{ e.bairro || '—' }}</dd>
+            </div>
+            <div class="linha">
+              <dt>Cidade / UF</dt>
+              <dd>{{ e.localidade }} / {{ e.uf }}</dd>
+            </div>
+          </dl>
+        }
+      </section>
+    </div>
+
+    @if (erro(); as falha) {
+      <p class="alerta alerta--erro" role="alert">{{ falha }}</p>
+    }
+
+    <div class="formulario__acoes">
+      <button type="submit" class="botao-principal formulario__enviar" mdbRipple [disabled]="salvando()">
+        {{ salvando() ? 'Salvando...' : modoEdicao() ? 'Salvar alterações' : 'Cadastrar cliente' }}
+      </button>
+    </div>
+  </form>
+</section>
