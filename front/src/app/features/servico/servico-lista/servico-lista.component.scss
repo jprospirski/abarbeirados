@@ -1,0 +1,24 @@
+/* A moldura (.cadastro, .tabela, .selo) vem do kit global; aqui fica só a grade
+   de colunas desta listagem. */
+
+.tabela__cabecalho,
+.tabela__linha {
+  grid-template-columns: minmax(0, 1.6fr) 110px 90px 100px 170px;
+}
+
+/* Inativo continua na lista, só apagado — igual ao agendamento cancelado. */
+.tabela__linha.is-inativo .tabela__destaque {
+  color: var(--cor-texto-fraco);
+  font-weight: 400;
+}
+
+@media (max-width: 860px) {
+  .tabela__cabecalho {
+    display: none;
+  }
+
+  .tabela__linha {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+}

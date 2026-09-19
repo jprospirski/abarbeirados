@@ -1,0 +1,81 @@
+<section class="cadastro">
+  <header class="cadastro__topo">
+    <div class="cadastro__id">
+      <p class="rotulo">04 Cadastro</p>
+      <h1 class="cadastro__titulo">Serviços</h1>
+    </div>
+
+    <div class="cadastro__acoes">
+      <input
+        type="search"
+        class="campo__entrada cadastro__busca"
+        placeholder="Nome do serviço"
+        aria-label="Pesquisar serviço por nome"
+        (input)="atualizarBusca($event)"
+      />
+      <a class="botao-secundario" mdbRipple routerLink="/servicos/novo">Novo serviço</a>
+    </div>
+  </header>
+
+  <hr class="regua" />
+
+  @if (erro(); as falha) {
+    <p class="alerta alerta--erro" role="alert">{{ falha }}</p>
+  } @else if (carregando()) {
+    <p class="cadastro__estado">Carregando serviços...</p>
+  } @else if (servicos().length === 0) {
+    <p class="cadastro__estado">
+      {{ busca() ? 'Nenhum serviço encontrado para essa busca.' : 'Nenhum serviço cadastrado ainda.' }}
+    </p>
+  } @else {
+    <p class="cadastro__meta">
+      {{ servicos().length }} {{ servicos().length === 1 ? 'serviço' : 'serviços' }}
+    </p>
+
+    <div class="tabela">
+      <div class="tabela__cabecalho" aria-hidden="true">
+        <span>Nome</span>
+        <span>Valor</span>
+        <span>Duração</span>
+        <span>Situação</span>
+        <span>Ações</span>
+      </div>
+
+      @for (servico of servicos(); track servico.id) {
+        <div class="tabela__linha" [class.is-inativo]="!servico.ativo">
+          <span class="tabela__destaque">{{ servico.nome }}</span>
+          <span class="tabela__mono">{{ servico.valor | currency: 'BRL' }}</span>
+          <span class="tabela__mono">{{ servico.duracaoMinutos }} min</span>
+          <span>
+            <span class="selo" [class.selo--ativo]="servico.ativo" [class.selo--inativo]="!servico.ativo">
+              {{ servico.ativo ? 'Ativo' : 'Inativo' }}
+            </span>
+          </span>
+          <div class="tabela__acoes">
+            <a class="botao-secundario" mdbRipple [routerLink]="['/servicos', servico.id, 'editar']">
+              Editar
+            </a>
+            <button
+              type="button"
+              class="botao-secundario botao-secundario--perigo"
+              mdbRipple
+              (click)="pedirExclusao(servico)"
+            >
+              Excluir
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>
+
+<app-confirmar-exclusao
+  [aberto]="!!exclusaoAlvo()"
+  titulo="Excluir serviço"
+  [alvo]="alvoExclusao()"
+  [erro]="erroExclusao()"
+  [excluindo]="excluindo()"
+  (confirmar)="confirmarExclusao()"
+  (cancelar)="cancelarExclusao()"
+/>
