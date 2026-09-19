@@ -36,17 +36,17 @@ public class BarbeiroService {
         return barbeiroMapper.forResponse(barbeiroRepository.save(barbeiro));
     }
 
+    /** nome e apenasAtivos combinam entre si, nao sao mutuamente exclusivos. */
     @Transactional(readOnly = true)
     public List<BarbeiroResponse> listar(String nome, Boolean apenasAtivos) {
-        List<Barbeiro> barbeiros;
-        if (nome != null && !nome.isBlank()) {
-            barbeiros = barbeiroRepository.findByNomeContainingIgnoreCase(nome);
-        } else if (Boolean.TRUE.equals(apenasAtivos)) {
-            barbeiros = barbeiroRepository.findByAtivo(true);
-        } else {
-            barbeiros = barbeiroRepository.findAll();
-        }
-        return barbeiros.stream().map(barbeiroMapper::forResponse).toList();
+        List<Barbeiro> barbeiros = (nome != null && !nome.isBlank())
+                ? barbeiroRepository.findByNomeContainingIgnoreCase(nome)
+                : barbeiroRepository.findAll();
+
+        return barbeiros.stream()
+                .filter(barbeiro -> !Boolean.TRUE.equals(apenasAtivos) || Boolean.TRUE.equals(barbeiro.getAtivo()))
+                .map(barbeiroMapper::forResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)

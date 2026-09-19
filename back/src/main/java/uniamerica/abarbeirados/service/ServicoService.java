@@ -27,17 +27,17 @@ public class ServicoService {
         return servicoMapper.forResponse(salvo);
     }
 
+    /** nome e apenasAtivos combinam entre si, nao sao mutuamente exclusivos. */
     @Transactional(readOnly = true)
     public List<ServicoResponse> listar(String nome, Boolean apenasAtivos) {
-        List<Servico> servico;
-        if (nome != null && !nome.isBlank()) {
-            servico = servicoRepository.findByNomeContainingIgnoreCase(nome);
-        } else if (Boolean.TRUE.equals(apenasAtivos)) {
-            servico = servicoRepository.findByAtivo(true);
-        } else {
-            servico = servicoRepository.findAll();
-        }
-        return servico.stream().map(servicoMapper::forResponse).toList();
+        List<Servico> servicos = (nome != null && !nome.isBlank())
+                ? servicoRepository.findByNomeContainingIgnoreCase(nome)
+                : servicoRepository.findAll();
+
+        return servicos.stream()
+                .filter(servico -> !Boolean.TRUE.equals(apenasAtivos) || Boolean.TRUE.equals(servico.getAtivo()))
+                .map(servicoMapper::forResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)

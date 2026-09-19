@@ -69,10 +69,28 @@
         }
       </section>
 
+      <!-- -------------------------------------------------- barbeiro -->
+      <section class="bloco" [class.bloco--erro]="barbeiroInvalido">
+        <div class="bloco__topo">
+          <h2 class="rotulo">02 Barbeiro</h2>
+        </div>
+
+        <select class="campo__entrada" formControlName="barbeiroId" aria-label="Barbeiro">
+          <option [ngValue]="null">Selecione um barbeiro...</option>
+          @for (barbeiro of barbeiroService.barbeiros(); track barbeiro.id) {
+          <option [ngValue]="barbeiro.id">{{ barbeiro.nome }}</option>
+          }
+        </select>
+
+        @if (barbeiroInvalido) {
+        <p class="aviso">Informe o barbeiro para seguir</p>
+        }
+      </section>
+
       <!-- -------------------------------------------------- servicos -->
       <section class="bloco" [class.bloco--erro]="servicoInvalido">
         <div class="bloco__topo">
-          <h2 class="rotulo">02 Serviços</h2>
+          <h2 class="rotulo">03 Serviços</h2>
           @if (economia() > 0) {
           <span class="combo">Combo &minus;{{ economia() | currency: 'BRL' }}</span>
           }
@@ -141,7 +159,7 @@
       <!-- ------------------------------------------------------ data -->
       <section class="bloco">
         <div class="bloco__topo">
-          <h2 class="rotulo">03 Data</h2>
+          <h2 class="rotulo">04 Data</h2>
           <span class="bloco__mes">{{ tituloMes() }}</span>
         </div>
 
@@ -188,7 +206,7 @@
       <!-- --------------------------------------------------- horario -->
       <section class="bloco" [class.bloco--erro]="horaInvalida">
         <div class="bloco__topo">
-          <h2 class="rotulo">04 Horário</h2>
+          <h2 class="rotulo">05 Horário</h2>
           <span class="bloco__meta">
             {{ vagasLivres() }} {{ vagasLivres() === 1 ? 'vaga' : 'vagas' }}
           </span>
@@ -248,7 +266,7 @@
     <aside class="trilho">
       <div class="comprovante">
         <div class="comprovante__cabecalho">
-          <h2 class="rotulo">05 Resumo</h2>
+          <h2 class="rotulo">06 Resumo</h2>
           <span class="comprovante__selo">
             {{ confirmado() ? 'Confirmado' : 'Pré-reserva' }}
           </span>
@@ -260,6 +278,10 @@
           <div class="linha">
             <dt>Cliente</dt>
             <dd>{{ nomeCliente() || '—' }}</dd>
+          </div>
+          <div class="linha">
+            <dt>Barbeiro</dt>
+            <dd>{{ nomeBarbeiro() || '—' }}</dd>
           </div>
           <div class="linha">
             <dt>Serviço</dt>

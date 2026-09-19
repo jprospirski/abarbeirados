@@ -13,6 +13,7 @@ import { Observable, map, of, switchMap } from 'rxjs';
 import { Agendamento, Horario } from '../../core/models/agendamento.model';
 import { ItemCarrinho, ItemServico } from '../../core/models/servico.model';
 import { AgendamentoService } from '../../core/services/agendamento.service';
+import { BarbeiroService } from '../../core/services/barbeiro.service';
 import {
   DIAS_SEMANA,
   MESES,
@@ -72,6 +73,7 @@ export class AgendamentoComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly service = inject(AgendamentoService);
+  protected readonly barbeiroService = inject(BarbeiroService);
 
   protected readonly hoje = paraDataIso(new Date());
 
@@ -92,6 +94,7 @@ export class AgendamentoComponent implements OnInit {
       novoNome: '',
       novoEmail: '',
       novoTelefone: '',
+      barbeiroId: [null as number | null, Validators.required],
       itens: [[] as ItemServico[], Validators.required],
       quimicaDuracao: null as number | null,
       quimicaValor: null as number | null,
@@ -108,6 +111,7 @@ export class AgendamentoComponent implements OnInit {
   );
 
   protected readonly modoCliente = computed(() => this.valor().modoCliente);
+  protected readonly barbeiroId = computed(() => this.valor().barbeiroId);
   protected readonly itens = computed(() => this.valor().itens);
   protected readonly temQuimica = computed(() => this.itens().includes('QUIMICA'));
 
@@ -141,6 +145,7 @@ export class AgendamentoComponent implements OnInit {
   protected readonly semana = computed<DiaSemana[]>(() => {
     const inicio = this.inicioSemana();
     const duracao = this.duracao();
+    const barbeiroId = this.barbeiroId();
 
     return Array.from({ length: 7 }, (_, i) => {
       const dia = somarDias(inicio, i);
@@ -149,7 +154,9 @@ export class AgendamentoComponent implements OnInit {
 
       const lotado =
         !passado &&
-        !this.service.horariosDoDia(iso, duracao).some((h) => h.disponivel);
+        !this.service
+          .horariosDoDia(iso, duracao, undefined, barbeiroId)
+          .some((h) => h.disponivel);
 
       return {
         iso,
@@ -191,6 +198,10 @@ export class AgendamentoComponent implements OnInit {
       : v.novoNome.trim();
   });
 
+  protected readonly nomeBarbeiro = computed(
+    () => this.barbeiroService.barbeiros().find((b) => b.id === this.barbeiroId())?.nome ?? '',
+  );
+
   /** 'seg, 17 de agosto' — montado à mão para não depender do locale. */
   protected readonly dataExtenso = computed(() => {
     const [ano, mes, dia] = this.valor().data.split('-').map(Number);
@@ -205,7 +216,7 @@ export class AgendamentoComponent implements OnInit {
    */
   protected readonly horarios = computed<Horario[]>(() =>
     this.service
-      .horariosDoDia(this.valor().data, this.duracao())
+      .horariosDoDia(this.valor().data, this.duracao(), undefined, this.barbeiroId())
       .filter((h) => h.disponivel),
   );
 
@@ -231,6 +242,10 @@ export class AgendamentoComponent implements OnInit {
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.revalidarHorario());
 
+    this.form.controls.barbeiroId.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.revalidarHorario());
+
     this.form.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
       this.erro.set(null);
       this.confirmado.set(null);
@@ -241,6 +256,7 @@ export class AgendamentoComponent implements OnInit {
 
   ngOnInit(): void {
     this.service.carregar();
+    this.barbeiroService.listar(true).pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
   }
 
   protected definirModoCliente(modo: 'existente' | 'novo'): void {
@@ -338,6 +354,7 @@ export class AgendamentoComponent implements OnInit {
             {
               clienteId,
               servicoId: servico.id,
+              barbeiroId: v.barbeiroId!,
               dataHora: paraDataHora(v.data, v.hora),
               observacoes: v.observacoes,
             },
@@ -369,6 +386,11 @@ export class AgendamentoComponent implements OnInit {
       (controle.invalid && controle.touched) ||
       (!!this.form.errors?.['quimicaIncompleta'] && this.form.touched)
     );
+  }
+
+  protected get barbeiroInvalido(): boolean {
+    const controle = this.form.controls.barbeiroId;
+    return controle.invalid && controle.touched;
   }
 
   protected get horaInvalida(): boolean {
@@ -403,7 +425,12 @@ export class AgendamentoComponent implements OnInit {
       return;
     }
 
-    const grade = this.service.horariosDoDia(v.data, this.duracaoDe(v));
+    const grade = this.service.horariosDoDia(
+      v.data,
+      this.duracaoDe(v),
+      undefined,
+      v.barbeiroId,
+    );
 
     if (!grade.find((h) => h.hora === v.hora)?.disponivel) {
       this.form.controls.hora.setValue('');
