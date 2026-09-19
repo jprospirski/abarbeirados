@@ -20,7 +20,6 @@ export interface ItemCarrinho {
   nome: string;
   duracaoMinutos: number;
   valor: number;
-  personalizado?: boolean;
   exclusivo?: boolean;
 }
 

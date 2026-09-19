@@ -164,28 +164,6 @@
   text-transform: uppercase;
 }
 
-.quimica {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  max-width: 340px;
-  margin-top: 14px;
-}
-
-.quimica__campo {
-  display: block;
-
-  span {
-    display: block;
-    margin-bottom: 6px;
-    color: var(--cor-texto-suave);
-    font-family: var(--fonte-mono);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-}
-
 /* -------------------------------------------------------- faixa semanal -- */
 
 /* A faixa de dias virou peça do kit compartilhado em styles.scss, porque a
@@ -242,6 +220,72 @@
     background: var(--cor-marca-cheia);
     color: var(--cor-sobre-marca);
     font-weight: 600;
+  }
+
+  /* Bloqueado continua na grade, só apagado — e cada motivo tem uma cara:
+     passado fica cinza, ocupado ganha o tênue de perigo e riscado, e o que não
+     cabe até o fechamento fica tracejado. O title completa com o texto. */
+  &:disabled {
+    cursor: not-allowed;
+    border-color: var(--cor-borda);
+    background: transparent;
+    color: var(--cor-texto-fraco);
+  }
+
+  &--passado:disabled {
+    opacity: 0.55;
+  }
+
+  &--ocupado:disabled {
+    background: var(--cor-perigo-tenue);
+    color: var(--cor-perigo-texto);
+    text-decoration: line-through;
+  }
+
+  &--sem-tempo:disabled {
+    border-style: dashed;
+  }
+}
+
+.grade__legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legenda__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--cor-texto-fraco);
+  font-family: var(--fonte-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Amostra da legenda: um slot em miniatura, no mesmo estado do bloqueio. */
+.legenda__amostra {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  cursor: default;
+  pointer-events: none;
+
+  &.slot--passado {
+    opacity: 0.55;
+  }
+
+  &.slot--ocupado {
+    background: var(--cor-perigo-tenue);
+  }
+
+  &.slot--sem-tempo {
+    border-style: dashed;
   }
 }
 
@@ -312,6 +356,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+/* Sai da edição sem salvar: mesma largura do botão principal, logo abaixo. */
+.comprovante__voltar {
+  justify-content: center;
+  margin-top: 10px;
 }
 
 .comprovante__selo {
@@ -428,11 +478,6 @@
 
   .trio {
     grid-template-columns: 1fr;
-  }
-
-  .quimica {
-    grid-template-columns: 1fr;
-    max-width: none;
   }
 
   /* Uma coluna: com duas, o nome do serviço quebrava no meio da palavra. */
