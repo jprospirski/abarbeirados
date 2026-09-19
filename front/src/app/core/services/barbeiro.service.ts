@@ -6,16 +6,7 @@ import { Barbeiro, BarbeiroRequest } from '../models/barbeiro.model';
 import { Servico } from '../models/servico.model';
 import { traduzirErro } from '../util/erro.util';
 
-/**
- * Camada de dados de Barbeiro. Fala só com o BarbeiroController.
- *
- *   listar(apenasAtivos?, nome?)  GET    /api/barbeiros
- *   buscarPorId(id)               GET    /api/barbeiros/{id}
- *   servicosDoBarbeiro(id)        GET    /api/barbeiros/{id}/servicos
- *   criar(req)                    POST   /api/barbeiros
- *   atualizar(id, req)            PUT    /api/barbeiros/{id}
- *   excluir(id)                   DELETE /api/barbeiros/{id}
- */
+// - fala só com o BarbeiroController (/api/barbeiros)
 @Injectable({ providedIn: 'root' })
 export class BarbeiroService {
   private readonly http = inject(HttpClient);
@@ -44,10 +35,7 @@ export class BarbeiroService {
       .pipe(catchError(traduzirErro('Não foi possível carregar o barbeiro.')));
   }
 
-  /**
-   * Os serviços do barbeiro na forma completa de /api/servicos — com valor e
-   * duração, que o resumo dentro de `Barbeiro.servicos` não traz.
-   */
+  // - serviços na forma completa de /api/servicos, com valor e duração que o resumo em Barbeiro.servicos não traz
   servicosDoBarbeiro(id: number): Observable<Servico[]> {
     return this.http
       .get<Servico[]>(`/api/barbeiros/${id}/servicos`)

@@ -1,8 +1,6 @@
 <div class="agendar">
   <form class="agendar__grid" [formGroup]="form" (ngSubmit)="confirmar()">
-    <!-- ============================================== card unico do fluxo -->
     <div class="painel">
-      <!-- --------------------------------------------------- cliente -->
       <section class="bloco" [class.bloco--erro]="clienteInvalido">
         <div class="bloco__topo">
           <h2 class="rotulo">01 Cliente</h2>
@@ -10,6 +8,7 @@
             <button
               type="button"
               class="alternador__op"
+              mdbRipple
               [class.is-ativo]="modoCliente() === 'existente'"
               (click)="definirModoCliente('existente')"
             >
@@ -18,6 +17,7 @@
             <button
               type="button"
               class="alternador__op"
+              mdbRipple
               [class.is-ativo]="modoCliente() === 'novo'"
               (click)="definirModoCliente('novo')"
             >
@@ -27,40 +27,55 @@
         </div>
 
         @if (modoCliente() === 'existente') {
-        <select class="campo__entrada" formControlName="clienteId" aria-label="Cliente">
-          <option [ngValue]="null">Selecione um cliente...</option>
-          @for (cliente of service.clientes(); track cliente.id) {
-          <option [ngValue]="cliente.id">
-            {{ cliente.nome }} &middot; {{ cliente.telefone }}
-          </option>
-          }
-        </select>
+        <mdb-form-control>
+          <select mdbInput id="clienteId" class="form-control" formControlName="clienteId">
+            <option [ngValue]="null">Selecione um cliente...</option>
+            @for (cliente of clienteService.clientes(); track cliente.id) {
+            <option [ngValue]="cliente.id">
+              {{ cliente.nome }} &middot; {{ cliente.telefone }}
+            </option>
+            }
+          </select>
+          <label mdbLabel class="form-label" for="clienteId">Cliente</label>
+        </mdb-form-control>
         } @else {
         <div class="trio">
-          <input
-            class="campo__entrada"
-            type="text"
-            formControlName="novoNome"
-            placeholder="Nome completo"
-            aria-label="Nome completo"
-            autocomplete="off"
-          />
-          <input
-            class="campo__entrada"
-            type="tel"
-            formControlName="novoTelefone"
-            placeholder="Telefone"
-            aria-label="Telefone"
-            autocomplete="off"
-          />
-          <input
-            class="campo__entrada"
-            type="email"
-            formControlName="novoEmail"
-            placeholder="E-mail (opcional)"
-            aria-label="E-mail"
-            autocomplete="off"
-          />
+          <mdb-form-control>
+            <input
+              mdbInput
+              type="text"
+              id="novoNome"
+              class="form-control"
+              formControlName="novoNome"
+              autocomplete="off"
+            />
+            <label mdbLabel class="form-label" for="novoNome">Nome completo</label>
+          </mdb-form-control>
+          <mdb-form-control>
+            <input
+              mdbInput
+              type="tel"
+              id="novoTelefone"
+              class="form-control"
+              formControlName="novoTelefone"
+              inputmode="numeric"
+              maxlength="11"
+              (input)="somenteDigitos($event)"
+              autocomplete="off"
+            />
+            <label mdbLabel class="form-label" for="novoTelefone">Telefone</label>
+          </mdb-form-control>
+          <mdb-form-control>
+            <input
+              mdbInput
+              type="email"
+              id="novoEmail"
+              class="form-control"
+              formControlName="novoEmail"
+              autocomplete="off"
+            />
+            <label mdbLabel class="form-label" for="novoEmail">E-mail (opcional)</label>
+          </mdb-form-control>
         </div>
         }
 
@@ -69,25 +84,26 @@
         }
       </section>
 
-      <!-- -------------------------------------------------- barbeiro -->
       <section class="bloco" [class.bloco--erro]="barbeiroInvalido">
         <div class="bloco__topo">
           <h2 class="rotulo">02 Barbeiro</h2>
         </div>
 
-        <select class="campo__entrada" formControlName="barbeiroId" aria-label="Barbeiro">
-          <option [ngValue]="null">Selecione um barbeiro...</option>
-          @for (barbeiro of barbeiroService.barbeiros(); track barbeiro.id) {
-          <option [ngValue]="barbeiro.id">{{ barbeiro.nome }}</option>
-          }
-        </select>
+        <mdb-form-control>
+          <select mdbInput id="barbeiroId" class="form-control" formControlName="barbeiroId">
+            <option [ngValue]="null">Selecione um barbeiro...</option>
+            @for (barbeiro of barbeiroService.barbeiros(); track barbeiro.id) {
+            <option [ngValue]="barbeiro.id">{{ barbeiro.nome }}</option>
+            }
+          </select>
+          <label mdbLabel class="form-label" for="barbeiroId">Barbeiro</label>
+        </mdb-form-control>
 
         @if (barbeiroInvalido) {
         <p class="aviso">Informe o barbeiro para seguir</p>
         }
       </section>
 
-      <!-- -------------------------------------------------- servicos -->
       <section class="bloco" [class.bloco--erro]="servicoInvalido">
         <div class="bloco__topo">
           <h2 class="rotulo">03 Serviços</h2>
@@ -108,55 +124,17 @@
             <span class="item__check" aria-hidden="true"></span>
             <span class="item__nome">{{ item.nome }}</span>
             <span class="item__meta">
-                @if (item.personalizado) {
-                  a combinar
-                } @else {
-                  {{ item.duracaoMinutos }} min &middot; {{ item.valor | currency: 'BRL' }}
-                }
-              </span>
+              {{ item.duracaoMinutos }} min &middot; {{ item.valor | currency: 'BRL' }}
+            </span>
           </button>
           }
         </div>
 
-        @if (temQuimica()) {
-        <div class="quimica">
-          <label class="quimica__campo">
-            <span>Duração (min)</span>
-            <input
-              class="campo__entrada"
-              type="number"
-              min="10"
-              step="10"
-              formControlName="quimicaDuracao"
-              placeholder="90"
-            />
-          </label>
-          <label class="quimica__campo">
-            <span>Valor (R$)</span>
-            <input
-              class="campo__entrada"
-              type="number"
-              min="1"
-              step="10"
-              formControlName="quimicaValor"
-              placeholder="160"
-            />
-          </label>
-        </div>
-        }
-
         @if (servicoInvalido) {
-        <p class="aviso">
-          @if (temQuimica()) {
-          Informe duração e valor da química
-          } @else {
-          Selecione ao menos um serviço
-          }
-        </p>
+        <p class="aviso">Selecione ao menos um serviço</p>
         }
       </section>
 
-      <!-- ------------------------------------------------------ data -->
       <section class="bloco">
         <div class="bloco__topo">
           <h2 class="rotulo">04 Data</h2>
@@ -203,7 +181,6 @@
         </div>
       </section>
 
-      <!-- --------------------------------------------------- horario -->
       <section class="bloco" [class.bloco--erro]="horaInvalida">
         <div class="bloco__topo">
           <h2 class="rotulo">05 Horário</h2>
@@ -218,12 +195,21 @@
         </p>
         }
 
+        <!-- - bloqueados ficam na grade, desabilitados, com o motivo no title e na cor -->
         <div class="grade__slots">
           @for (horario of horarios(); track horario.hora) {
           <button
             type="button"
             class="slot"
             [class.is-ativo]="form.controls.hora.value === horario.hora"
+            [class.slot--passado]="horario.motivo === 'passado'"
+            [class.slot--ocupado]="horario.motivo === 'ocupado'"
+            [class.slot--sem-tempo]="horario.motivo === 'sem-tempo'"
+            [disabled]="!horario.disponivel"
+            [title]="horario.motivo ? MOTIVO_LABEL[horario.motivo] : ''"
+            [attr.aria-label]="
+              horario.motivo ? horario.hora + ' — ' + MOTIVO_LABEL[horario.motivo] : horario.hora
+            "
             (click)="selecionarHorario(horario)"
           >
             {{ horario.hora }}
@@ -231,30 +217,49 @@
           }
         </div>
 
+        <ul class="grade__legenda" aria-label="Legenda dos horários">
+          <li class="legenda__item">
+            <i class="legenda__amostra slot slot--passado" aria-hidden="true"></i>
+            {{ MOTIVO_LABEL['passado'] }}
+          </li>
+          <li class="legenda__item">
+            <i class="legenda__amostra slot slot--ocupado" aria-hidden="true"></i>
+            {{ MOTIVO_LABEL['ocupado'] }}
+          </li>
+          <li class="legenda__item">
+            <i class="legenda__amostra slot slot--sem-tempo" aria-hidden="true"></i>
+            {{ MOTIVO_LABEL['sem-tempo'] }}
+          </li>
+        </ul>
+
         @if (horaInvalida) {
         <p class="aviso">Selecione um horário</p>
         }
       </section>
 
-      <!-- ------------------------------------------------ observacao -->
       <section class="bloco">
         @if (mostrarObs()) {
         <div class="bloco__topo">
           <h2 class="rotulo">Observação</h2>
-          <button type="button" class="obs__remover" (click)="removerObs()">
+          <button type="button" class="obs__remover" mdbRipple (click)="removerObs()">
             Remover
           </button>
         </div>
-        <textarea
-          class="campo__entrada campo__entrada--area"
-          formControlName="observacoes"
-          rows="3"
-          maxlength="280"
-          aria-label="Observações"
-          placeholder="Preferências, alergias, referências de corte..."
-        ></textarea>
+        <mdb-form-control>
+          <textarea
+            mdbInput
+            id="observacoes"
+            class="form-control"
+            formControlName="observacoes"
+            rows="3"
+            maxlength="280"
+          ></textarea>
+          <label mdbLabel class="form-label" for="observacoes">
+            Preferências, alergias, referências de corte...
+          </label>
+        </mdb-form-control>
         } @else {
-        <button type="button" class="botao-secundario" (click)="mostrarObs.set(true)">
+        <button type="button" class="botao-secundario" mdbRipple (click)="mostrarObs.set(true)">
           <span class="botao-secundario__mais" aria-hidden="true">+</span>
           Adicionar observação
         </button>
@@ -262,13 +267,18 @@
       </section>
     </div>
 
-    <!-- ==================================================== comprovante -->
     <aside class="trilho">
       <div class="comprovante">
         <div class="comprovante__cabecalho">
           <h2 class="rotulo">06 Resumo</h2>
           <span class="comprovante__selo">
-            {{ confirmado() ? 'Confirmado' : 'Pré-reserva' }}
+            @if (confirmado()) {
+              Confirmado
+            } @else if (modoEdicao()) {
+              Editando #{{ editandoId() }}
+            } @else {
+              Pré-reserva
+            }
           </span>
         </div>
 
@@ -332,9 +342,19 @@
         </p>
         }
 
-        <button type="submit" class="botao-principal" [disabled]="salvando()">
-          {{ salvando() ? 'Agendando...' : 'Confirmar agendamento' }}
+        <button type="submit" class="botao-principal" mdbRipple [disabled]="salvando()">
+          @if (salvando()) {
+            {{ modoEdicao() ? 'Salvando...' : 'Agendando...' }}
+          } @else {
+            {{ modoEdicao() ? 'Salvar alterações' : 'Confirmar agendamento' }}
+          }
         </button>
+
+        @if (modoEdicao()) {
+          <a class="botao-secundario comprovante__voltar" mdbRipple routerLink="/agendamentos">
+            Cancelar edição
+          </a>
+        }
       </div>
     </aside>
   </form>

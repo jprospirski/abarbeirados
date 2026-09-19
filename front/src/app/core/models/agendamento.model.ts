@@ -1,12 +1,4 @@
-/*
- * Contrato do domínio de Agendamento.
- *
- * O backend ainda está em stub, então por enquanto estas interfaces valem como
- * especificação do que a API precisa devolver. Vale manter os mesmos nomes de
- * campo ao escrever o Java — evita ter que mapear na mão depois.
- */
-
-/** Espelha o enum model/StatusAgendamento.java, que também está vazio. */
+// - espelho dos records em uniamerica.abarbeirados.dto.agendamento e do enum StatusAgendamento
 export type StatusAgendamento =
   | 'AGENDADO'
   | 'CONFIRMADO'
@@ -20,21 +12,17 @@ export const STATUS_LABEL: Record<StatusAgendamento, string> = {
   CANCELADO: 'Cancelado',
 };
 
-/** Corpo do POST /api/agendamentos. */
+// - corpo do post/put /api/agendamentos
 export interface AgendamentoRequest {
   clienteId: number;
   servicoId: number;
   barbeiroId: number;
-  /** LocalDateTime em ISO, ex.: 2026-08-16T14:30 */
+  // - localdatetime em iso, ex.: 2026-08-16t14:30
   dataHora: string;
   observacoes?: string | null;
 }
 
-/**
- * O que a listagem precisa receber. `valor` e `duracaoMinutos` são cópia do
- * momento do agendamento, e não o preço atual do serviço — se a tabela mudar,
- * o histórico continua contando a verdade.
- */
+// - valor e duracaoMinutos são cópia do momento do agendamento, não o preço atual do serviço
 export interface Agendamento {
   id: number;
   clienteId: number;
@@ -51,9 +39,9 @@ export interface Agendamento {
   observacoes: string | null;
 }
 
-/** Um bloco da grade. O motivo só é preenchido quando está indisponível. */
+// - um bloco da grade; o motivo só vem preenchido quando está indisponível
 export interface Horario {
-  /** HH:mm */
+  // - hh:mm
   hora: string;
   disponivel: boolean;
   motivo?: 'ocupado' | 'passado' | 'sem-tempo';

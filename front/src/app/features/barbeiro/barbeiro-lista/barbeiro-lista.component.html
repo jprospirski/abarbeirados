@@ -1,0 +1,79 @@
+<section class="cadastro">
+  <header class="cadastro__topo">
+    <div class="cadastro__id">
+      <p class="rotulo">05 Cadastro</p>
+      <h1 class="cadastro__titulo">Barbeiros</h1>
+    </div>
+
+    <div class="cadastro__acoes">
+      <input
+        type="search"
+        class="campo__entrada cadastro__busca"
+        placeholder="Nome do barbeiro"
+        aria-label="Pesquisar barbeiro por nome"
+        (input)="atualizarBusca($event)"
+      />
+      <a class="botao-secundario" mdbRipple routerLink="/barbeiros/novo">Novo barbeiro</a>
+    </div>
+  </header>
+
+  <hr class="regua" />
+
+  @if (erro(); as falha) {
+    <p class="alerta alerta--erro" role="alert">{{ falha }}</p>
+  } @else if (carregando()) {
+    <p class="cadastro__estado">Carregando barbeiros...</p>
+  } @else if (barbeiros().length === 0) {
+    <p class="cadastro__estado">
+      {{ busca() ? 'Nenhum barbeiro encontrado para essa busca.' : 'Nenhum barbeiro cadastrado ainda.' }}
+    </p>
+  } @else {
+    <p class="cadastro__meta">
+      {{ barbeiros().length }} {{ barbeiros().length === 1 ? 'barbeiro' : 'barbeiros' }}
+    </p>
+
+    <div class="tabela">
+      <div class="tabela__cabecalho" aria-hidden="true">
+        <span>Nome</span>
+        <span>Serviços</span>
+        <span>Situação</span>
+        <span>Ações</span>
+      </div>
+
+      @for (barbeiro of barbeiros(); track barbeiro.id) {
+        <div class="tabela__linha" [class.is-inativo]="!barbeiro.ativo">
+          <span class="tabela__destaque">{{ barbeiro.nome }}</span>
+          <span class="tabela__fraco">{{ nomesServicos(barbeiro) }}</span>
+          <span>
+            <span class="selo" [class.selo--ativo]="barbeiro.ativo" [class.selo--inativo]="!barbeiro.ativo">
+              {{ barbeiro.ativo ? 'Ativo' : 'Inativo' }}
+            </span>
+          </span>
+          <div class="tabela__acoes">
+            <a class="botao-secundario" mdbRipple [routerLink]="['/barbeiros', barbeiro.id, 'editar']">
+              Editar
+            </a>
+            <button
+              type="button"
+              class="botao-secundario botao-secundario--perigo"
+              mdbRipple
+              (click)="pedirExclusao(barbeiro)"
+            >
+              Excluir
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>
+
+<app-confirmar-exclusao
+  [aberto]="!!exclusaoAlvo()"
+  titulo="Excluir barbeiro"
+  [alvo]="alvoExclusao()"
+  [erro]="erroExclusao()"
+  [excluindo]="excluindo()"
+  (confirmar)="confirmarExclusao()"
+  (cancelar)="cancelarExclusao()"
+/>

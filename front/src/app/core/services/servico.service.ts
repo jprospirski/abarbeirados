@@ -5,15 +5,7 @@ import { Observable, catchError, tap } from 'rxjs';
 import { Servico, ServicoRequest } from '../models/servico.model';
 import { traduzirErro } from '../util/erro.util';
 
-/**
- * Camada de dados de Serviço. Fala só com o ServicoController.
- *
- *   listar(apenasAtivos?, nome?)  GET    /api/servicos
- *   buscarPorId(id)               GET    /api/servicos/{id}
- *   criar(req)                    POST   /api/servicos
- *   atualizar(id, req)            PUT    /api/servicos/{id}
- *   excluir(id)                   DELETE /api/servicos/{id}
- */
+// - fala só com o ServicoController (/api/servicos)
 @Injectable({ providedIn: 'root' })
 export class ServicoService {
   private readonly http = inject(HttpClient);
@@ -21,10 +13,7 @@ export class ServicoService {
   private readonly _servicos = signal<Servico[]>([]);
   readonly servicos = this._servicos.asReadonly();
 
-  /**
-   * O formulário de agendamento pede `apenasAtivos`; a tela de serviços precisa
-   * ver também os desativados, para poder religá-los.
-   */
+  // - o agendamento pede apenasAtivos; a tela de serviços precisa ver os desativados para religá-los
   listar(apenasAtivos?: boolean, nome?: string): Observable<Servico[]> {
     let params = new HttpParams();
     if (apenasAtivos) {

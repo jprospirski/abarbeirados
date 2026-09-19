@@ -5,33 +5,40 @@
       <h1 class="entrar__titulo">Entrar</h1>
       <p class="entrar__legenda">Use as credenciais da barbearia para continuar.</p>
 
-      <label class="entrar__campo">
-        <span class="entrar__rotulo-campo">Usuário</span>
+      <mdb-form-control class="entrar__campo">
         <input
-          class="campo__entrada"
+          mdbInput
           type="text"
+          id="usuario"
+          class="form-control"
           formControlName="usuario"
-          placeholder="admin"
           autocomplete="username"
         />
-      </label>
+        <label mdbLabel class="form-label" for="usuario">Usuário</label>
+      </mdb-form-control>
 
-      <label class="entrar__campo">
-        <span class="entrar__rotulo-campo">Senha</span>
+      <mdb-form-control class="entrar__campo">
         <input
-          class="campo__entrada"
+          mdbInput
           type="password"
+          id="senha"
+          class="form-control"
           formControlName="senha"
-          placeholder="••••••"
           autocomplete="current-password"
         />
-      </label>
+        <label mdbLabel class="form-label" for="senha">Senha</label>
+      </mdb-form-control>
 
       @if (erro()) {
         <p class="alerta alerta--erro" role="alert">{{ erro() }}</p>
       }
 
-      <button type="submit" class="botao-principal entrar__botao" [disabled]="entrando()">
+      <button
+        type="submit"
+        class="botao-principal entrar__botao"
+        mdbRipple
+        [disabled]="entrando()"
+      >
         {{ entrando() ? 'Entrando...' : 'Entrar' }}
       </button>
     </div>

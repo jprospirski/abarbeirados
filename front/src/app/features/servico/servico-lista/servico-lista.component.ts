@@ -1,39 +1,36 @@
+import { CurrencyPipe } from '@angular/common';
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { MdbRippleModule } from 'mdb-angular-ui-kit/ripple';
 import Swal from 'sweetalert2';
 
-import { Cliente } from '../../../core/models/cliente.model';
-import { ClienteService } from '../../../core/services/cliente.service';
+import { Servico } from '../../../core/models/servico.model';
+import { ServicoService } from '../../../core/services/servico.service';
 import { ConfirmarExclusaoComponent } from '../../../shared/confirmar-exclusao/confirmar-exclusao.component';
 
+// - carrega todos, inativos inclusive: é daqui que um serviço desativado é religado
 @Component({
-  selector: 'app-cliente-lista',
-  imports: [RouterLink, MdbRippleModule, ConfirmarExclusaoComponent],
-  templateUrl: './cliente-lista.component.html',
-  styleUrl: './cliente-lista.component.scss',
+  selector: 'app-servico-lista',
+  imports: [CurrencyPipe, RouterLink, MdbRippleModule, ConfirmarExclusaoComponent],
+  templateUrl: './servico-lista.component.html',
+  styleUrl: './servico-lista.component.scss',
 })
-export class ClienteListaComponent implements OnInit {
+export class ServicoListaComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly service = inject(ClienteService);
+  protected readonly service = inject(ServicoService);
 
   protected readonly carregando = signal(false);
   protected readonly erro = signal<string | null>(null);
   protected readonly busca = signal('');
 
-  // - filtro local em vez de /api/clientes?nome=: a lista já está no signal e responde a cada tecla
-  protected readonly clientes = computed(() => {
+  // - filtro local, mesmo critério da listagem de clientes
+  protected readonly servicos = computed(() => {
     const termo = this.busca().trim().toLowerCase();
 
     return this.service
-      .clientes()
-      .filter(
-        (cliente) =>
-          !termo ||
-          cliente.nome.toLowerCase().includes(termo) ||
-          cliente.telefone.includes(termo),
-      )
+      .servicos()
+      .filter((servico) => !termo || servico.nome.toLowerCase().includes(termo))
       .sort((a, b) => a.nome.localeCompare(b.nome));
   });
 
@@ -56,26 +53,26 @@ export class ClienteListaComponent implements OnInit {
         next: () => this.carregando.set(false),
         error: (e: unknown) => {
           this.erro.set(
-            e instanceof Error ? e.message : 'Não foi possível carregar os clientes.',
+            e instanceof Error ? e.message : 'Não foi possível carregar os serviços.',
           );
           this.carregando.set(false);
         },
       });
   }
 
-  // - cliente com o modal de confirmação aberto, ou null quando fechado
-  protected readonly exclusaoAlvo = signal<Cliente | null>(null);
+  // - serviço com o modal de confirmação aberto, ou null quando fechado
+  protected readonly exclusaoAlvo = signal<Servico | null>(null);
   protected readonly excluindo = signal(false);
   protected readonly erroExclusao = signal<string | null>(null);
 
   protected readonly alvoExclusao = computed(() => {
     const alvo = this.exclusaoAlvo();
-    return alvo ? `o cliente ${alvo.nome}` : '';
+    return alvo ? `o serviço ${alvo.nome}` : '';
   });
 
-  protected pedirExclusao(cliente: Cliente): void {
+  protected pedirExclusao(servico: Servico): void {
     this.erroExclusao.set(null);
-    this.exclusaoAlvo.set(cliente);
+    this.exclusaoAlvo.set(servico);
   }
 
   protected cancelarExclusao(): void {
@@ -102,12 +99,12 @@ export class ClienteListaComponent implements OnInit {
         next: () => {
           this.excluindo.set(false);
           this.exclusaoAlvo.set(null);
-          Swal.fire({ icon: 'success', title: 'Cliente excluído!', timer: 1600, showConfirmButton: false });
+          Swal.fire({ icon: 'success', title: 'Serviço excluído!', timer: 1600, showConfirmButton: false });
         },
         error: (e: unknown) => {
-          // - fica no modal: cliente com agendamento devolve 409 e a mensagem precisa aparecer ao lado do botão
+          // - fica no modal: serviço com agendamento ou barbeiro vinculado devolve 409 e a mensagem precisa aparecer ao lado do botão
           this.erroExclusao.set(
-            e instanceof Error ? e.message : 'Não foi possível excluir o cliente.',
+            e instanceof Error ? e.message : 'Não foi possível excluir o serviço.',
           );
           this.excluindo.set(false);
         },

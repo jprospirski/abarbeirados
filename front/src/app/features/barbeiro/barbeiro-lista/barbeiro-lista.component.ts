@@ -4,36 +4,32 @@ import { RouterLink } from '@angular/router';
 import { MdbRippleModule } from 'mdb-angular-ui-kit/ripple';
 import Swal from 'sweetalert2';
 
-import { Cliente } from '../../../core/models/cliente.model';
-import { ClienteService } from '../../../core/services/cliente.service';
+import { Barbeiro } from '../../../core/models/barbeiro.model';
+import { BarbeiroService } from '../../../core/services/barbeiro.service';
 import { ConfirmarExclusaoComponent } from '../../../shared/confirmar-exclusao/confirmar-exclusao.component';
 
+// - carrega todos, inativos inclusive: é daqui que um barbeiro afastado volta para a escala
 @Component({
-  selector: 'app-cliente-lista',
+  selector: 'app-barbeiro-lista',
   imports: [RouterLink, MdbRippleModule, ConfirmarExclusaoComponent],
-  templateUrl: './cliente-lista.component.html',
-  styleUrl: './cliente-lista.component.scss',
+  templateUrl: './barbeiro-lista.component.html',
+  styleUrl: './barbeiro-lista.component.scss',
 })
-export class ClienteListaComponent implements OnInit {
+export class BarbeiroListaComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly service = inject(ClienteService);
+  protected readonly service = inject(BarbeiroService);
 
   protected readonly carregando = signal(false);
   protected readonly erro = signal<string | null>(null);
   protected readonly busca = signal('');
 
-  // - filtro local em vez de /api/clientes?nome=: a lista já está no signal e responde a cada tecla
-  protected readonly clientes = computed(() => {
+  // - filtro local, mesmo critério das outras listagens
+  protected readonly barbeiros = computed(() => {
     const termo = this.busca().trim().toLowerCase();
 
     return this.service
-      .clientes()
-      .filter(
-        (cliente) =>
-          !termo ||
-          cliente.nome.toLowerCase().includes(termo) ||
-          cliente.telefone.includes(termo),
-      )
+      .barbeiros()
+      .filter((barbeiro) => !termo || barbeiro.nome.toLowerCase().includes(termo))
       .sort((a, b) => a.nome.localeCompare(b.nome));
   });
 
@@ -43,6 +39,11 @@ export class ClienteListaComponent implements OnInit {
 
   protected atualizarBusca(evento: Event): void {
     this.busca.set((evento.target as HTMLInputElement).value);
+  }
+
+  // - "corte, barba, sobrancelha", ou um traço para quem não atende nada
+  protected nomesServicos(barbeiro: Barbeiro): string {
+    return barbeiro.servicos.map((s) => s.nome).join(', ') || '—';
   }
 
   private carregar(): void {
@@ -56,26 +57,26 @@ export class ClienteListaComponent implements OnInit {
         next: () => this.carregando.set(false),
         error: (e: unknown) => {
           this.erro.set(
-            e instanceof Error ? e.message : 'Não foi possível carregar os clientes.',
+            e instanceof Error ? e.message : 'Não foi possível carregar os barbeiros.',
           );
           this.carregando.set(false);
         },
       });
   }
 
-  // - cliente com o modal de confirmação aberto, ou null quando fechado
-  protected readonly exclusaoAlvo = signal<Cliente | null>(null);
+  // - barbeiro com o modal de confirmação aberto, ou null quando fechado
+  protected readonly exclusaoAlvo = signal<Barbeiro | null>(null);
   protected readonly excluindo = signal(false);
   protected readonly erroExclusao = signal<string | null>(null);
 
   protected readonly alvoExclusao = computed(() => {
     const alvo = this.exclusaoAlvo();
-    return alvo ? `o cliente ${alvo.nome}` : '';
+    return alvo ? `o barbeiro ${alvo.nome}` : '';
   });
 
-  protected pedirExclusao(cliente: Cliente): void {
+  protected pedirExclusao(barbeiro: Barbeiro): void {
     this.erroExclusao.set(null);
-    this.exclusaoAlvo.set(cliente);
+    this.exclusaoAlvo.set(barbeiro);
   }
 
   protected cancelarExclusao(): void {
@@ -102,12 +103,12 @@ export class ClienteListaComponent implements OnInit {
         next: () => {
           this.excluindo.set(false);
           this.exclusaoAlvo.set(null);
-          Swal.fire({ icon: 'success', title: 'Cliente excluído!', timer: 1600, showConfirmButton: false });
+          Swal.fire({ icon: 'success', title: 'Barbeiro excluído!', timer: 1600, showConfirmButton: false });
         },
         error: (e: unknown) => {
-          // - fica no modal: cliente com agendamento devolve 409 e a mensagem precisa aparecer ao lado do botão
+          // - fica no modal: barbeiro com agendamento devolve 409 e a mensagem precisa aparecer ao lado do botão
           this.erroExclusao.set(
-            e instanceof Error ? e.message : 'Não foi possível excluir o cliente.',
+            e instanceof Error ? e.message : 'Não foi possível excluir o barbeiro.',
           );
           this.excluindo.set(false);
         },

@@ -139,7 +139,7 @@ public class AgendamentoService {
         boolean conflita = agendamentoRepository.findAll().stream()
                 .filter(agendamento -> agendamento.getBarbeiro().getId().equals(barbeiro.getId()))
                 .filter(agendamento -> agendamento.getStatus() != StatusAgendamento.CANCELADO)
-                // Com ignorarId nulo nenhum id bate, entao criar() checa a agenda inteira.
+                // - com ignorarId nulo nenhum id bate, então criar() checa a agenda inteira
                 .filter(agendamento -> !agendamento.getId().equals(ignorarId))
                 .anyMatch(agendamento -> {
                     LocalDateTime inicioExistente = agendamento.getDataHora();
