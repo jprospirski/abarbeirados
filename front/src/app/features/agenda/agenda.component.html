@@ -11,6 +11,7 @@
         <button
           type="button"
           class="alternador__op"
+          mdbRipple
           [class.is-ativo]="visao() === 'cartoes'"
           [attr.aria-pressed]="visao() === 'cartoes'"
           (click)="definirVisao('cartoes')"
@@ -20,6 +21,7 @@
         <button
           type="button"
           class="alternador__op"
+          mdbRipple
           [class.is-ativo]="visao() === 'lista'"
           [attr.aria-pressed]="visao() === 'lista'"
           (click)="definirVisao('lista')"
@@ -29,6 +31,7 @@
         <button
           type="button"
           class="alternador__op"
+          mdbRipple
           [class.is-ativo]="visao() === 'colunas'"
           [attr.aria-pressed]="visao() === 'colunas'"
           (click)="definirVisao('colunas')"
@@ -38,21 +41,24 @@
       </div>
       }
 
-      <input
-        type="search"
-        class="campo__entrada agenda__busca"
-        placeholder="Cliente ou serviço"
-        aria-label="Pesquisar por cliente ou serviço"
-        (input)="atualizarBusca($event)"
-      />
+      <mdb-form-control class="agenda__busca">
+        <input
+          mdbInput
+          type="search"
+          id="busca"
+          class="form-control"
+          autocomplete="off"
+          (input)="atualizarBusca($event)"
+        />
+        <label mdbLabel class="form-label" for="busca">Cliente ou serviço</label>
+      </mdb-form-control>
 
-      <a class="botao-secundario" routerLink="/agendamentos/novo">Novo</a>
+      <a class="botao-secundario" mdbRipple routerLink="/agendamentos/novo">Novo</a>
     </div>
   </header>
 
   <hr class="regua" />
 
-  <!-- ================================================== filtro por dia -->
   <div class="filtro">
     <div class="filtro__topo">
       <h2 class="rotulo">Filtrar por dia</h2>
@@ -61,6 +67,7 @@
         <button
           type="button"
           class="botao-secundario"
+          mdbRipple
           [class.is-ativo]="diaSelecionado() === hoje"
           [attr.aria-pressed]="diaSelecionado() === hoje"
           (click)="irParaHoje()"
@@ -70,6 +77,7 @@
         <button
           type="button"
           class="botao-secundario"
+          mdbRipple
           [class.is-ativo]="!diaSelecionado()"
           [attr.aria-pressed]="!diaSelecionado()"
           (click)="limparDia()"
@@ -149,7 +157,6 @@
       <p class="alerta alerta--erro" role="alert">{{ erro() }}</p>
     }
 
-    <!-- ===================================================== cartões -->
     @if (visaoEfetiva() === 'cartoes') {
       <ul class="cartoes">
         @for (a of agendamentos(); track a.id) {
@@ -175,24 +182,24 @@
               <select
                 class="estado"
                 [class]="'estado estado--' + a.status.toLowerCase()"
-                [value]="a.status"
                 [disabled]="salvandoId() === a.id"
                 [attr.aria-label]="'Status de ' + a.clienteNome"
                 (change)="mudarStatus(a, $event)"
               >
                 @for (s of STATUS; track s) {
-                  <option [value]="s">{{ STATUS_LABEL[s] }}</option>
+                  <option [value]="s" [selected]="s === a.status">{{ STATUS_LABEL[s] }}</option>
                 }
               </select>
             </div>
 
             <div class="cartao__acoes">
-              <a class="botao-secundario" [routerLink]="['/agendamentos', a.id, 'editar']">
+              <a class="botao-secundario" mdbRipple [routerLink]="['/agendamentos', a.id, 'editar']">
                 Editar
               </a>
               <button
                 type="button"
                 class="botao-secundario botao-secundario--perigo"
+                mdbRipple
                 (click)="pedirExclusao(a)"
               >
                 Excluir
@@ -203,7 +210,6 @@
       </ul>
     }
 
-    <!-- ======================================================= lista -->
     @if (visaoEfetiva() === 'lista') {
       <div class="tabela">
         <div class="tabela__cabecalho" aria-hidden="true">
@@ -231,22 +237,22 @@
             <span class="tabela__valor">{{ a.valor | currency: 'BRL' }}</span>
             <select
               [class]="'estado estado--' + a.status.toLowerCase()"
-              [value]="a.status"
               [disabled]="salvandoId() === a.id"
               [attr.aria-label]="'Status de ' + a.clienteNome"
               (change)="mudarStatus(a, $event)"
             >
               @for (s of STATUS; track s) {
-                <option [value]="s">{{ STATUS_LABEL[s] }}</option>
+                <option [value]="s" [selected]="s === a.status">{{ STATUS_LABEL[s] }}</option>
               }
             </select>
             <div class="tabela__acoes">
-              <a class="botao-secundario" [routerLink]="['/agendamentos', a.id, 'editar']">
+              <a class="botao-secundario" mdbRipple [routerLink]="['/agendamentos', a.id, 'editar']">
                 Editar
               </a>
               <button
                 type="button"
                 class="botao-secundario botao-secundario--perigo"
+                mdbRipple
                 (click)="pedirExclusao(a)"
               >
                 Excluir
@@ -257,7 +263,6 @@
       </div>
     }
 
-    <!-- ===================================================== colunas -->
     @if (visaoEfetiva() === 'colunas') {
       <div class="quadro">
         @for (coluna of porStatus(); track coluna.status) {
@@ -279,22 +284,22 @@
                   <p class="ficha__barbeiro">com {{ a.barbeiroNome }}</p>
                   <select
                     class="estado estado--mover"
-                    [value]="a.status"
                     [disabled]="salvandoId() === a.id"
                     [attr.aria-label]="'Mover ' + a.clienteNome + ' para outro status'"
                     (change)="mudarStatus(a, $event)"
                   >
                     @for (s of STATUS; track s) {
-                      <option [value]="s">{{ STATUS_LABEL[s] }}</option>
+                      <option [value]="s" [selected]="s === a.status">{{ STATUS_LABEL[s] }}</option>
                     }
                   </select>
                   <div class="ficha__acoes">
-                    <a class="botao-secundario" [routerLink]="['/agendamentos', a.id, 'editar']">
+                    <a class="botao-secundario" mdbRipple [routerLink]="['/agendamentos', a.id, 'editar']">
                       Editar
                     </a>
                     <button
                       type="button"
                       class="botao-secundario botao-secundario--perigo"
+                mdbRipple
                       (click)="pedirExclusao(a)"
                     >
                       Excluir
