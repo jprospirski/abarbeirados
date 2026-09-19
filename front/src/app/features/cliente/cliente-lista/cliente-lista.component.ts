@@ -8,7 +8,6 @@ import { Cliente } from '../../../core/models/cliente.model';
 import { ClienteService } from '../../../core/services/cliente.service';
 import { ConfirmarExclusaoComponent } from '../../../shared/confirmar-exclusao/confirmar-exclusao.component';
 
-/** Listagem de clientes, com busca por nome e exclusão confirmada em modal. */
 @Component({
   selector: 'app-cliente-lista',
   imports: [RouterLink, MdbRippleModule, ConfirmarExclusaoComponent],
@@ -23,11 +22,7 @@ export class ClienteListaComponent implements OnInit {
   protected readonly erro = signal<string | null>(null);
   protected readonly busca = signal('');
 
-  /*
-   * O filtro é local, e não uma nova chamada a /api/clientes?nome=: a lista
-   * inteira já está no signal do service, então filtrar aqui responde a cada
-   * tecla sem uma ida ao servidor por caractere digitado.
-   */
+  // - filtro local em vez de /api/clientes?nome=: a lista já está no signal e responde a cada tecla
   protected readonly clientes = computed(() => {
     const termo = this.busca().trim().toLowerCase();
 
@@ -68,9 +63,7 @@ export class ClienteListaComponent implements OnInit {
       });
   }
 
-  // ---------------------------------------------------------------- exclusão
-
-  /** Cliente com o modal de confirmação aberto, ou null quando fechado. */
+  // - cliente com o modal de confirmação aberto, ou null quando fechado
   protected readonly exclusaoAlvo = signal<Cliente | null>(null);
   protected readonly excluindo = signal(false);
   protected readonly erroExclusao = signal<string | null>(null);
@@ -112,8 +105,7 @@ export class ClienteListaComponent implements OnInit {
           Swal.fire({ icon: 'success', title: 'Cliente excluído!', timer: 1600, showConfirmButton: false });
         },
         error: (e: unknown) => {
-          // Fica no modal: excluir um cliente com agendamento devolve 409, e a
-          // mensagem precisa aparecer ao lado do botão que o atendente apertou.
+          // - fica no modal: cliente com agendamento devolve 409 e a mensagem precisa aparecer ao lado do botão
           this.erroExclusao.set(
             e instanceof Error ? e.message : 'Não foi possível excluir o cliente.',
           );

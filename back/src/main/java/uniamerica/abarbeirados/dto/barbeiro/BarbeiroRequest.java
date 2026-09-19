@@ -11,7 +11,7 @@ public record BarbeiroRequest(
         String nome,
         @NotEmpty(message = "Selecione ao menos um serviço")
         List<Long> servicoIds,
-        // Opcional: quem nao informa cria o barbeiro ativo, mesmo padrao do ServicoRequest.
+        // - opcional: sem informar, o barbeiro nasce ativo, mesmo padrão do ServicoRequest
         Boolean ativo
 ) {
 
