@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, catchError, forkJoin, tap, throwError } from 'rxjs';
+import { Observable, catchError, tap, throwError } from 'rxjs';
 
 import {
   Agendamento,
@@ -8,7 +8,6 @@ import {
   Horario,
   StatusAgendamento,
 } from '../models/agendamento.model';
-import { Cliente, ClienteRequest } from '../models/cliente.model';
 import {
   ItemCarrinho,
   ItemServico,
@@ -24,57 +23,24 @@ import {
   paraMinutos,
 } from '../util/data.util';
 import { traduzirErro } from '../util/erro.util';
-import { ClienteService } from './cliente.service';
-import { ServicoService } from './servico.service';
 
-/**
- * Camada de dados da tela de agendamento. Fala só com o AgendamentoController.
- *
- *   criar(req, duracao)      POST   /api/agendamentos
- *   obterPorId(id)           GET    /api/agendamentos/{id}
- *   atualizar(id, req, dur)  PUT    /api/agendamentos/{id}
- *   atualizarStatus(id, st)  PATCH  /api/agendamentos/{id}/status
- *   excluir(id)              DELETE /api/agendamentos/{id}
- *
- * Cliente e Serviço são de outros controllers, então quem conversa com eles é o
- * ClienteService e o ServicoService — aqui só existe a delegação que as telas
- * antigas já usavam (`clientes()`, `servicos()`, `criarCliente()`), para elas
- * não terem que injetar três services de uma vez.
- *
- * As consultas abaixo (grade de horários, agenda do dia) leem dos signals, por
- * isso continuam síncronas e podem ser usadas direto no template. Só as
- * escritas devolvem Observable.
- *
- * O proxy.conf.json manda /api para a 8080, então em `ng serve` não há CORS.
- */
+// - fala só com /api/agendamentos; cliente e serviço ficam nos próprios services, por isso resolverServico recebe o catálogo por parâmetro
+// - consultas (grade, agenda do dia) leem dos signals e são síncronas; só as escritas devolvem observable
 @Injectable({ providedIn: 'root' })
 export class AgendamentoService {
   private readonly http = inject(HttpClient);
-  private readonly clienteService = inject(ClienteService);
-  private readonly servicoService = inject(ServicoService);
 
   readonly abertura = '09:00';
   readonly fechamento = '19:00';
-  /** De quantos em quantos minutos a agenda oferece um horário. */
+  // - de quantos em quantos minutos a agenda oferece um horário
   readonly intervalo = 40;
 
-  /*
-   * O carrinho é conceito de tela e não tem tabela no banco: o atendente marca
-   * itens soltos e a combinação é traduzida para um Serviço único em
-   * resolverServico(). Por isso esta lista continua fixa aqui.
-   */
+  // - o carrinho não tem tabela: a combinação marcada vira um serviço único em resolverServico()
   readonly itensCarrinho: ItemCarrinho[] = [
     { chave: 'CORTE', nome: 'Corte', duracaoMinutos: 40, valor: 50 },
     { chave: 'BARBA', nome: 'Barba', duracaoMinutos: 20, valor: 30 },
     { chave: 'SOBRANCELHA', nome: 'Sobrancelha', duracaoMinutos: 20, valor: 20 },
-    {
-      chave: 'QUIMICA',
-      nome: 'Química',
-      duracaoMinutos: 0,
-      valor: 0,
-      personalizado: true,
-      exclusivo: true,
-    },
+    { chave: 'QUIMICA', nome: 'Química', duracaoMinutos: 10, valor: 0, exclusivo: true },
   ];
 
   private readonly _agendamentos = signal<Agendamento[]>([]);
@@ -85,20 +51,9 @@ export class AgendamentoService {
   readonly carregando = this._carregando.asReadonly();
   readonly erroCarga = this._erroCarga.asReadonly();
 
-  /* Repassados de quem é dono deles, para os templates não mudarem. */
-  readonly clientes = this.clienteService.clientes;
-  readonly servicos = this.servicoService.servicos;
-
   private carregado = false;
 
-  // ------------------------------------------------------------------- carga
-
-  /**
-   * Puxa clientes, serviços e agendamentos de uma vez.
-   *
-   * As telas chamam sem argumento, então a primeira que abrir carrega e a
-   * segunda reaproveita. `forcar` serve para recarregar depois de uma escrita.
-   */
+  // - a primeira tela que abrir carrega e as outras reaproveitam; forcar recarrega depois de uma escrita
   carregar(forcar = false): void {
     if (this.carregado && !forcar) {
       return;
@@ -108,54 +63,38 @@ export class AgendamentoService {
     this._carregando.set(true);
     this._erroCarga.set(null);
 
-    forkJoin({
-      clientes: this.clienteService.listar(),
-      servicos: this.servicoService.listar(true),
-      agendamentos: this.http.get<Agendamento[]>('/api/agendamentos'),
-    }).subscribe({
-      next: ({ agendamentos }) => {
-        // Clientes e serviços já foram para os signals dos seus próprios services.
-        this._agendamentos.set(agendamentos);
-        this._carregando.set(false);
-      },
-      error: () => {
-        this._erroCarga.set(
-          'Não foi possível falar com o servidor. Confira se o backend está no ar na porta 8080.',
-        );
-        this._carregando.set(false);
-        // Deixa tentar de novo na próxima visita à tela.
-        this.carregado = false;
-      },
-    });
+    this.http
+      .get<Agendamento[]>('/api/agendamentos')
+      .pipe(catchError(traduzirErro('Não foi possível carregar os agendamentos.')))
+      .subscribe({
+        next: (agendamentos) => {
+          this._agendamentos.set(agendamentos);
+          this._carregando.set(false);
+        },
+        error: () => {
+          this._erroCarga.set(
+            'Não foi possível falar com o servidor. Confira se o backend está no ar na porta 8080.',
+          );
+          this._carregando.set(false);
+          // - deixa tentar de novo na próxima visita à tela
+          this.carregado = false;
+        },
+      });
   }
 
-  // ------------------------------------------------------- catalogo/combos
-
-  /**
-   * Traduz a combinação marcada na tela para o Serviço único que vai ao banco.
-   * Devolve undefined se a combinação não tiver linha cadastrada.
-   *
-   * A busca é por NOME, e não por id, porque os ids quem gera é o banco. Um
-   * mapa de ids fixos aqui casaria com a linha errada se a ordem de inserção
-   * mudasse — e agendaria o serviço errado sem erro nenhum. Por nome, uma
-   * divergência devolve undefined e a tela avisa que a combinação não tem
-   * cadastro, que é uma falha visível.
-   */
-  resolverServico(itens: ItemServico[]): Servico | undefined {
+  // - traduz a combinação do carrinho para o serviço único do catálogo; valor e duração vêm dele, nunca customizados
+  // - busca por nome e não por id: ids são gerados pelo banco, e uma divergência de nome vira undefined visível na tela
+  resolverServico(itens: ItemServico[], servicos: Servico[]): Servico | undefined {
     const nome = COMBINACOES[chaveCombinacao(itens)];
     if (!nome) {
       return undefined;
     }
 
     const alvo = normalizar(nome);
-    return this.servicos().find((s) => normalizar(s.nome) === alvo);
+    return servicos.find((s) => normalizar(s.nome) === alvo);
   }
 
-  /**
-   * Caminho inverso de {@link resolverServico}: a partir do nome gravado no
-   * agendamento, devolve os itens do carrinho que precisam ficar marcados ao
-   * reabrir o formulário em modo edição.
-   */
+  // - inverso de resolverServico: do nome gravado para os itens do carrinho, usado ao reabrir em edição
   itensDoServico(servicoNome: string): ItemServico[] {
     const alvo = normalizar(servicoNome);
     const chave = Object.entries(COMBINACOES).find(
@@ -165,7 +104,7 @@ export class AgendamentoService {
     return chave ? (chave.split('|') as ItemServico[]) : [];
   }
 
-  /** Quanto sairia comprando item por item — serve para mostrar a economia. */
+  // - quanto sairia item por item, para mostrar a economia do combo
   somaAvulsa(itens: ItemServico[]): number {
     return itens.reduce((total, chave) => {
       const item = this.itensCarrinho.find((i) => i.chave === chave);
@@ -173,37 +112,16 @@ export class AgendamentoService {
     }, 0);
   }
 
-  // --------------------------------------------------------------- consultas
-
-  buscarCliente(id: number): Cliente | undefined {
-    return this.clientes().find((c) => c.id === id);
-  }
-
-  buscarServico(id: number): Servico | undefined {
-    return this.servicos().find((s) => s.id === id);
-  }
-
-  /** Em ordem de horário. */
+  // - em ordem de horário
   agendaDoDia(data: string): Agendamento[] {
     return this._agendamentos()
       .filter((a) => dataDe(a.dataHora) === data)
       .sort((a, b) => a.dataHora.localeCompare(b.dataHora));
   }
 
-  /**
-   * Grade do dia, de {@link intervalo} em {@link intervalo} minutos.
-   *
-   * Um horário fica indisponível quando já passou, quando o serviço não caberia
-   * antes do fechamento, ou quando conflita com um agendamento ativo — cancelar
-   * libera a vaga de volta.
-   *
-   * Quem decide o conflito é a duração real, não o tamanho do bloco: um corte
-   * das 15:00 leva 40 min, termina 15:40 e deixa o bloco das 15:40 livre.
-   *
-   * `barbeiroId` recorta a agenda para um barbeiro só. Sem ele a grade mostra
-   * qualquer bloco já usado por qualquer barbeiro, que era o comportamento de
-   * quando o agendamento não tinha dono.
-   */
+  // - grade do dia: bloqueia horário passado, sem tempo até o fechamento ou em conflito com agendamento ativo (cancelado libera)
+  // - o conflito usa a duração real, não o bloco: corte das 15:00 (40 min) deixa 15:40 livre
+  // - barbeiroId recorta a agenda para um barbeiro; sem ele qualquer barbeiro ocupa o bloco
   horariosDoDia(
     data: string,
     duracaoMinutos: number | null,
@@ -255,20 +173,8 @@ export class AgendamentoService {
     return grade;
   }
 
-  // ---------------------------------------------------------------- comandos
-
-  /** Delega ao dono do endpoint; o formulário cadastra cliente novo sem sair da tela. */
-  criarCliente(request: ClienteRequest): Observable<Cliente> {
-    return this.clienteService.criar(request);
-  }
-
-  /**
-   * Revalida o conflito de horário no cliente antes de enviar. O backend também
-   * checa (`NegocioException`), mas a conta local evita a ida ao servidor e dá a
-   * mensagem na hora. `duracao` vem por parâmetro só para essa conta; na edição,
-   * `ignorarId` tira o próprio agendamento da lista de ocupados para ele não
-   * bater contra si mesmo.
-   */
+  // - revalida o conflito no cliente antes de enviar; o backend também checa, mas aqui a mensagem sai na hora
+  // - ignorarId tira o próprio agendamento da lista de ocupados durante a edição
   private temConflito(
     dataHora: string,
     duracao: number,
@@ -285,7 +191,7 @@ export class AgendamentoService {
       );
   }
 
-  /** Corpo do POST/PUT: observação em branco vira null, nunca string vazia. */
+  // - observação em branco vira null, nunca string vazia
   private corpoAgendamento(request: AgendamentoRequest): AgendamentoRequest {
     return {
       clienteId: request.clienteId,
@@ -296,10 +202,7 @@ export class AgendamentoService {
     };
   }
 
-  /**
-   * Cria o agendamento depois de revalidar o conflito de horário. O valor e a
-   * duração gravados são os que o backend copia do serviço.
-   */
+  // - valor e duração gravados são os que o backend copia do serviço
   criar(request: AgendamentoRequest, duracao: number): Observable<Agendamento> {
     if (this.temConflito(request.dataHora, duracao, request.barbeiroId)) {
       return throwError(
@@ -328,10 +231,7 @@ export class AgendamentoService {
       );
   }
 
-  /**
-   * Busca direta ao servidor, usada pela tela de edição: ela pode abrir por
-   * link direto, antes da listagem completa terminar de carregar.
-   */
+  // - busca direta ao servidor: a edição pode abrir por link antes da listagem carregar
   obterPorId(id: number): Observable<Agendamento> {
     return this.http
       .get<Agendamento>(`/api/agendamentos/${id}`)
@@ -365,9 +265,7 @@ export class AgendamentoService {
   }
 }
 
-// -------------------------------------------------------------- catalogo
-
-/** Compara nomes ignorando caixa e acento. */
+// - compara nomes ignorando caixa e acento
 function normalizar(nome: string): string {
   return nome
     .trim()
@@ -376,10 +274,7 @@ function normalizar(nome: string): string {
     .replace(/\p{Diacritic}/gu, '');
 }
 
-/**
- * Itens ordenados e unidos por '|' apontando para o NOME do Serviço.
- * Os nomes precisam bater com os cadastrados na tabela `servico`.
- */
+// - itens ordenados e unidos por '|' apontando para o nome do serviço; precisa bater com a tabela servico
 const COMBINACOES: Record<string, string> = {
   CORTE: 'Corte',
   BARBA: 'Barba',

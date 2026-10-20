@@ -9,14 +9,8 @@ import Swal from 'sweetalert2';
 import { CepResponse } from '../../../core/models/cep.model';
 import { ClienteService } from '../../../core/services/cliente.service';
 
-/**
- * Cadastro e edição de cliente na mesma rota — o que decide é o `:id` do
- * caminho, lido do snapshot, igual ao AgendamentoComponent.
- *
- * O CEP é só conveniência de tela: a consulta sai pelo backend (Feign/ViaCEP) e
- * o endereço aparece como confirmação visual, mas não é enviado no corpo do
- * POST/PUT — a tabela `clientes` não tem coluna de endereço.
- */
+// - cadastro e edição no mesmo componente: o :id da rota decide
+// - o cep é só confirmação visual via feign/viacep; não vai no post/put porque a tabela não tem endereço
 @Component({
   selector: 'app-cliente-form',
   imports: [ReactiveFormsModule, RouterLink, MdbFormsModule, MdbRippleModule],
@@ -36,14 +30,15 @@ export class ClienteFormComponent implements OnInit {
   protected readonly erro = signal<string | null>(null);
   protected readonly salvando = signal(false);
 
-  /** Endereço devolvido pela ViaCEP, ou null enquanto ninguém consultou. */
+  // - endereço devolvido pela viacep, ou null enquanto ninguém consultou
   protected readonly endereco = signal<CepResponse | null>(null);
   protected readonly buscandoCep = signal(false);
   protected readonly erroCep = signal<string | null>(null);
 
   protected readonly form = this.fb.nonNullable.group({
     nome: ['', Validators.required],
-    telefone: ['', Validators.required],
+    // - só dígitos, ddd + número, com ou sem o nono dígito; mesmo regex do clienterequest
+    telefone: ['', [Validators.required, Validators.pattern(/^\d{10,11}$/)]],
     email: ['', Validators.email],
     cep: '',
   });
@@ -76,8 +71,6 @@ export class ClienteFormComponent implements OnInit {
       });
   }
 
-  // -------------------------------------------------------------------- cep
-
   protected buscarCep(): void {
     const cep = this.form.controls.cep.value.replace(/\D/g, '');
 
@@ -107,8 +100,6 @@ export class ClienteFormComponent implements OnInit {
         },
       });
   }
-
-  // ------------------------------------------------------------------ ações
 
   protected salvar(): void {
     this.erro.set(null);
@@ -144,10 +135,18 @@ export class ClienteFormComponent implements OnInit {
     });
   }
 
-  // ------------------------------------------------------------- validação
+  // - descarta o que não for dígito conforme o usuário digita ou cola
+  protected somenteDigitos(evento: Event): void {
+    const digitos = (evento.target as HTMLInputElement).value.replace(/\D/g, '').slice(0, 11);
+    this.form.controls.telefone.setValue(digitos);
+  }
 
   protected invalido(campo: 'nome' | 'telefone' | 'email'): boolean {
     const controle = this.form.controls[campo];
     return controle.invalid && controle.touched;
+  }
+
+  protected get telefoneForaDoPadrao(): boolean {
+    return this.invalido('telefone') && !!this.form.controls.telefone.errors?.['pattern'];
   }
 }

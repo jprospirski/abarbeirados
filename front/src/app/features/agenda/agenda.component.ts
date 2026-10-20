@@ -2,6 +2,9 @@ import { CurrencyPipe } from '@angular/common';
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
+import { MdbFormsModule } from 'mdb-angular-ui-kit/forms';
+import { MdbRippleModule } from 'mdb-angular-ui-kit/ripple';
+import Swal from 'sweetalert2';
 
 import {
   Agendamento,
@@ -11,19 +14,20 @@ import {
 import { AgendamentoService } from '../../core/services/agendamento.service';
 import {
   DIAS_SEMANA,
-  MESES,
   MESES_CURTOS,
   dataDe,
   horaDe,
   inicioDaSemana,
   paraDataIso,
+  rotuloMes,
   somarDias,
 } from '../../core/util/data.util';
+import { ConfirmarExclusaoComponent } from '../../shared/confirmar-exclusao/confirmar-exclusao.component';
 
-/** As três formas de olhar a mesma lista. */
+// - as três formas de olhar a mesma lista
 type Visao = 'cartoes' | 'lista' | 'colunas';
 
-/** Um dia da faixa de filtro, com quantos agendamentos caem nele. */
+// - um dia da faixa de filtro, com quantos agendamentos caem nele
 interface DiaFiltro {
   iso: string;
   rotulo: string;
@@ -33,7 +37,7 @@ interface DiaFiltro {
   total: number;
 }
 
-/** Ordem em que os status aparecem no quadro de colunas. */
+// - ordem em que os status aparecem no quadro de colunas
 const STATUS: StatusAgendamento[] = [
   'AGENDADO',
   'CONFIRMADO',
@@ -41,7 +45,7 @@ const STATUS: StatusAgendamento[] = [
   'CANCELADO',
 ];
 
-/** 2026-08-18T09:00:00 vira 18/08. */
+// - 2026-08-18t09:00:00 vira 18/08
 function diaCurto(dataHora: string): string {
   const [, mes, dia] = dataDe(dataHora).split('-');
   return `${dia}/${mes}`;
@@ -49,7 +53,7 @@ function diaCurto(dataHora: string): string {
 
 @Component({
   selector: 'app-agenda',
-  imports: [CurrencyPipe, RouterLink],
+  imports: [CurrencyPipe, RouterLink, ConfirmarExclusaoComponent, MdbFormsModule, MdbRippleModule],
   templateUrl: './agenda.component.html',
   styleUrl: './agenda.component.scss',
 })
@@ -64,32 +68,22 @@ export class AgendaComponent implements OnInit {
 
   protected readonly visao = signal<Visao>('cartoes');
   protected readonly busca = signal('');
-  /**
-   * Em tela estreita não faz sentido oferecer as três visões: a lista vira
-   * colunas espremidas e o quadro não cabe. O cartão é o único formato que lê
-   * bem no celular, então ele passa a ser o único.
-   */
+  // - em tela estreita só o cartão lê bem, então as outras visões somem
   protected readonly ehEstreito = signal(false);
-  /** O que a tela realmente desenha: no estreito, sempre cartões. */
+  // - o que a tela realmente desenha: no estreito, sempre cartões
   protected readonly visaoEfetiva = computed<Visao>(() =>
     this.ehEstreito() ? 'cartoes' : this.visao(),
   );
   protected readonly erro = signal<string | null>(null);
-  /** Id em gravação, para travar só a linha que está mudando. */
+  // - id em gravação, para travar só a linha que está mudando
   protected readonly salvandoId = signal<number | null>(null);
 
-  /** Domingo da semana que está aparecendo na faixa. */
+  // - domingo da semana que está aparecendo na faixa
   private readonly inicioSemana = signal(inicioDaSemana(new Date()));
-  /** ISO do dia filtrado, ou null para a agenda inteira. */
+  // - iso do dia filtrado, ou null para a agenda inteira
   protected readonly diaSelecionado = signal<string | null>(null);
 
-  /**
-   * Recorte por texto, aplicado antes do recorte por dia.
-   *
-   * A ordem importa: a contagem que aparece em cada dia da faixa sai daqui, e
-   * não da lista final — assim, ao pesquisar um cliente, a faixa mostra em quais
-   * dias ele tem horário, em vez de repetir o total de sempre.
-   */
+  // - recorte por texto antes do recorte por dia: a contagem da faixa sai daqui, então a busca mostra em quais dias o cliente tem horário
   private readonly porBusca = computed(() => {
     const termo = this.busca().trim().toLowerCase();
 
@@ -106,7 +100,7 @@ export class AgendaComponent implements OnInit {
       );
   });
 
-  /** Os sete dias da semana em exibição, com a contagem de cada um. */
+  // - os sete dias da semana em exibição, com a contagem de cada um
   protected readonly semana = computed<DiaFiltro[]>(() => {
     const inicio = this.inicioSemana();
     const lista = this.porBusca();
@@ -126,19 +120,9 @@ export class AgendaComponent implements OnInit {
     });
   });
 
-  protected readonly tituloMes = computed(() => {
-    const inicio = this.inicioSemana();
-    const fim = somarDias(inicio, 6);
-    const ano = fim.getFullYear();
+  protected readonly tituloMes = computed(() => rotuloMes(this.inicioSemana()));
 
-    if (inicio.getMonth() === fim.getMonth()) {
-      return `${MESES[inicio.getMonth()]} ${ano}`;
-    }
-
-    return `${MESES[inicio.getMonth()]} — ${MESES[fim.getMonth()]} ${ano}`;
-  });
-
-  /** Ordenados por data e hora, com os campos de exibição já prontos. */
+  // - ordenados por data e hora, com os campos de exibição já prontos
   protected readonly agendamentos = computed(() => {
     const dia = this.diaSelecionado();
 
@@ -152,7 +136,7 @@ export class AgendaComponent implements OnInit {
       .sort((a, b) => a.dataHora.localeCompare(b.dataHora));
   });
 
-  /** Uma lista por status, para o quadro de colunas. */
+  // - uma lista por status, para o quadro de colunas
   protected readonly porStatus = computed(() => {
     const lista = this.agendamentos();
 
@@ -173,7 +157,7 @@ export class AgendaComponent implements OnInit {
   });
 
   constructor() {
-    // Mesmo ponto de corte do @media que esconde o alternador no scss.
+    // - mesmo ponto de corte do @media que esconde o alternador no scss
     const consulta = window.matchMedia('(max-width: 720px)');
     const aoMudar = (evento: MediaQueryListEvent) => this.ehEstreito.set(evento.matches);
 
@@ -194,9 +178,7 @@ export class AgendaComponent implements OnInit {
     this.busca.set((evento.target as HTMLInputElement).value);
   }
 
-  // ------------------------------------------------------------ filtro de dia
-
-  /** Clicar no dia já selecionado desmarca e volta a mostrar a agenda inteira. */
+  // - clicar no dia já selecionado desmarca e volta a mostrar a agenda inteira
   protected selecionarDia(iso: string): void {
     this.diaSelecionado.update((atual) => (atual === iso ? null : iso));
   }
@@ -205,11 +187,7 @@ export class AgendaComponent implements OnInit {
     this.diaSelecionado.set(null);
   }
 
-  /*
-   * A faixa anda livremente para trás, ao contrário da do formulário: lá o
-   * passado não pode ser reservado, aqui ele é justamente o histórico que a
-   * agenda precisa mostrar.
-   */
+  // - a faixa anda livremente para trás, ao contrário da do formulário: aqui o passado é histórico
   protected semanaAnterior(): void {
     this.inicioSemana.update((d) => somarDias(d, -7));
   }
@@ -218,13 +196,62 @@ export class AgendaComponent implements OnInit {
     this.inicioSemana.update((d) => somarDias(d, 7));
   }
 
-  /** Volta a faixa para a semana corrente e mostra o dia de hoje. */
+  // - volta a faixa para a semana corrente e mostra o dia de hoje
   protected irParaHoje(): void {
     this.inicioSemana.set(inicioDaSemana(new Date()));
     this.diaSelecionado.set(this.hoje);
   }
 
-  // ------------------------------------------------------------------- status
+  // - agendamento com o modal de confirmação aberto, ou null quando fechado
+  protected readonly exclusaoAlvo = signal<Agendamento | null>(null);
+  // - frase que vai em negrito no modal: "o agendamento de fulano"
+  protected readonly alvoExclusao = computed(() => {
+    const alvo = this.exclusaoAlvo();
+    return alvo ? `o agendamento de ${alvo.clienteNome}` : '';
+  });
+
+  protected readonly excluindo = signal(false);
+  protected readonly erroExclusao = signal<string | null>(null);
+
+  protected pedirExclusao(agendamento: Agendamento): void {
+    this.erroExclusao.set(null);
+    this.exclusaoAlvo.set(agendamento);
+  }
+
+  protected cancelarExclusao(): void {
+    if (this.excluindo()) {
+      return;
+    }
+    this.exclusaoAlvo.set(null);
+    this.erroExclusao.set(null);
+  }
+
+  protected confirmarExclusao(): void {
+    const alvo = this.exclusaoAlvo();
+    if (!alvo) {
+      return;
+    }
+
+    this.excluindo.set(true);
+    this.erroExclusao.set(null);
+
+    this.service
+      .excluir(alvo.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.excluindo.set(false);
+          this.exclusaoAlvo.set(null);
+          Swal.fire({ icon: 'success', title: 'Agendamento excluído!', timer: 1600, showConfirmButton: false });
+        },
+        error: (e: unknown) => {
+          this.erroExclusao.set(
+            e instanceof Error ? e.message : 'Não foi possível excluir o agendamento.',
+          );
+          this.excluindo.set(false);
+        },
+      });
+  }
 
   protected mudarStatus(agendamento: Agendamento, evento: Event): void {
     const status = (evento.target as HTMLSelectElement).value as StatusAgendamento;
@@ -246,8 +273,7 @@ export class AgendaComponent implements OnInit {
             e instanceof Error ? e.message : 'Não foi possível alterar o status.',
           );
           this.salvandoId.set(null);
-          // A lista não mudou, mas o <select> já está mostrando a opção nova.
-          // Recarrega para o que aparece na tela voltar a ser o que está no banco.
+          // - o <select> já mostra a opção nova mas a lista não mudou: recarrega para voltar ao que está no banco
           this.service.carregar(true);
         },
       });

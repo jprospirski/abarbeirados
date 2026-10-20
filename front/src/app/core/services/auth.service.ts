@@ -1,28 +1,18 @@
 import { Injectable, signal } from '@angular/core';
 import { Observable, delay, of, tap } from 'rxjs';
 
-/**
- * Não existe backend de autenticação ainda, então a credencial fica fixa aqui
- * mesmo. Trocar por uma chamada real de login é só reescrever o corpo de
- * {@link AuthService.login} — a sessão já fica no signal e no localStorage.
- */
+// - sem backend de autenticação, a credencial fica fixa; trocar por login real é só reescrever login()
 const USUARIO_VALIDO = 'admin';
 const SENHA_VALIDA = '123456';
 
-/**
- * Sessão mockada da aplicação.
- *
- * O estado sobrevive a um refresh porque fica espelhado no localStorage — sem
- * isso, dar F5 na tela de agenda jogaria o atendente de volta para o login a
- * cada recarga.
- */
+// - a sessão fica espelhada no localstorage para sobreviver ao f5
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private static readonly CHAVE = 'abarbeirados:autenticado';
 
   readonly autenticado = signal(AuthService.sessaoSalva());
 
-  /** Delay simula a ida ao servidor — a tela de login já tem estado de carregando. */
+  // - o delay simula a ida ao servidor; a tela de login já tem estado de carregando
   login(usuario: string, senha: string): Observable<boolean> {
     const valido = usuario.trim() === USUARIO_VALIDO && senha === SENHA_VALIDA;
 
@@ -50,8 +40,7 @@ export class AuthService {
         localStorage.removeItem(AuthService.CHAVE);
       }
     } catch {
-      // Navegação privativa bloqueia o storage. A sessão só deixa de sobreviver
-      // a um refresh — não é motivo para travar o login.
+      // - navegação privativa bloqueia o storage: a sessão só deixa de sobreviver ao refresh, não trava o login
     }
   }
 

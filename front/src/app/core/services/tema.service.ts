@@ -2,14 +2,7 @@ import { Injectable, effect, signal } from '@angular/core';
 
 export type Tema = 'escuro' | 'claro';
 
-/**
- * Alterna a paleta da interface.
- *
- * A troca é instantânea porque nada recarrega: o serviço só escreve `data-tema`
- * no <html> e o styles.scss redefine as variáveis CSS sob esse seletor. Como
- * todo componente lê as mesmas variáveis, nenhum precisa saber qual tema está
- * ativo.
- */
+// - só escreve data-tema no <html>; o styles.scss redefine as variáveis css sob esse seletor
 @Injectable({ providedIn: 'root' })
 export class TemaService {
   private static readonly CHAVE = 'abarbeirados:tema';
@@ -24,8 +17,7 @@ export class TemaService {
       try {
         localStorage.setItem(TemaService.CHAVE, tema);
       } catch {
-        // Navegação privativa bloqueia o storage. A preferência é opcional,
-        // então perder ela não pode derrubar a aplicação.
+        // - navegação privativa bloqueia o storage; a preferência é opcional e perdê-la não derruba a aplicação
       }
     });
   }
@@ -45,7 +37,7 @@ export class TemaService {
         return salvo;
       }
     } catch {
-      // Sem acesso ao storage: cai no padrão.
+      // - sem acesso ao storage: cai no padrão
     }
     return 'escuro';
   }

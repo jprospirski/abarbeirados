@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 import uniamerica.abarbeirados.dto.agendamento.AgendamentoRequest;
 import uniamerica.abarbeirados.dto.agendamento.AgendamentoResponse;
 import uniamerica.abarbeirados.model.Agendamento;
+import uniamerica.abarbeirados.model.Barbeiro;
 import uniamerica.abarbeirados.model.Cliente;
 import uniamerica.abarbeirados.model.Servico;
 import uniamerica.abarbeirados.model.StatusAgendamento;
@@ -13,12 +14,13 @@ import uniamerica.abarbeirados.model.StatusAgendamento;
 public class AgendamentoMapper {
 
     /*
-     * Cliente e Servico chegam prontos: quem resolve os ids e o service, que e a
-     * camada com acesso aos repositorios.
+     * Cliente, Barbeiro e Servico chegam prontos: quem resolve os ids e o
+     * service, que e a camada com acesso aos repositorios.
      */
-    public Agendamento forEntity(AgendamentoRequest request, Cliente cliente, Servico servico) {
+    public Agendamento forEntity(AgendamentoRequest request, Cliente cliente, Barbeiro barbeiro, Servico servico) {
         return Agendamento.builder()
                 .cliente(cliente)
+                .barbeiro(barbeiro)
                 .servico(servico)
                 .dataHora(request.dataHora())
                 .observacoes(request.observacoes())
@@ -28,8 +30,10 @@ public class AgendamentoMapper {
                 .build();
     }
 
-    public void updateEntity(AgendamentoRequest request, Agendamento agendamento, Cliente cliente, Servico servico) {
+    public void updateEntity(AgendamentoRequest request, Agendamento agendamento, Cliente cliente,
+                             Barbeiro barbeiro, Servico servico) {
         agendamento.setCliente(cliente);
+        agendamento.setBarbeiro(barbeiro);
         agendamento.setServico(servico);
         agendamento.setDataHora(request.dataHora());
         agendamento.setObservacoes(request.observacoes());
@@ -39,6 +43,7 @@ public class AgendamentoMapper {
 
     public AgendamentoResponse forResponse(Agendamento agendamento) {
         Cliente cliente = agendamento.getCliente();
+        Barbeiro barbeiro = agendamento.getBarbeiro();
         Servico servico = agendamento.getServico();
 
         return new AgendamentoResponse(
@@ -46,6 +51,8 @@ public class AgendamentoMapper {
                 cliente.getId(),
                 cliente.getNome(),
                 cliente.getTelefone(),
+                barbeiro.getId(),
+                barbeiro.getNome(),
                 servico.getId(),
                 servico.getNome(),
                 agendamento.getValor(),

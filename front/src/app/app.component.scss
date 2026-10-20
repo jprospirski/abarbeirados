@@ -153,6 +153,26 @@
   }
 }
 
+/* Mesmo desenho dos itens de navegação, só que é ação e não link. */
+.sair {
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  color: var(--cor-texto-suave);
+  font-family: var(--fonte-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-transform: uppercase;
+  transition: color 0.12s ease;
+
+  &:hover {
+    color: var(--cor-perigo-texto);
+  }
+}
+
 .lateral__rodape {
   padding-top: 18px;
   color: var(--cor-texto-fraco);
@@ -168,6 +188,11 @@
 .conteudo {
   margin-left: var(--lateral-largura);
   min-height: 100vh;
+
+  /* Sem lateral (tela de login), o conteúdo ocupa a página inteira. */
+  &--solto {
+    margin-left: 0;
+  }
 }
 
 /* --------------------------------------------------------- responsivo -- */
@@ -216,6 +241,18 @@
   .regua,
   .lateral__rodape {
     display: none;
+  }
+
+  /* Na barra superior o botão de sair fica ao lado do alternador de tema. */
+  .lateral__base {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .sair {
+    width: auto;
+    margin-top: 0;
   }
 
   /* As abas sangram até a borda da barra e dividem a largura por igual. */

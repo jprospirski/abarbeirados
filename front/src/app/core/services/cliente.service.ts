@@ -6,20 +6,8 @@ import { CepResponse } from '../models/cep.model';
 import { Cliente, ClienteRequest } from '../models/cliente.model';
 import { traduzirErro } from '../util/erro.util';
 
-/**
- * Camada de dados de Cliente. Fala só com o ClienteController.
- *
- *   listar(nome?)        GET    /api/clientes
- *   buscarPorId(id)      GET    /api/clientes/{id}
- *   buscarPorCep(cep)    GET    /api/clientes/cep/{cep}
- *   criar(req)           POST   /api/clientes
- *   atualizar(id, req)   PUT    /api/clientes/{id}
- *   excluir(id)          DELETE /api/clientes/{id}
- *
- * A lista fica num signal para as telas lerem síncrono no template; as escritas
- * já atualizam esse signal para ninguém precisar recarregar a listagem inteira
- * depois de salvar.
- */
+// - fala só com o ClienteController (/api/clientes)
+// - a lista fica num signal e as escritas já o atualizam, sem recarregar a listagem depois de salvar
 @Injectable({ providedIn: 'root' })
 export class ClienteService {
   private readonly http = inject(HttpClient);
@@ -36,17 +24,14 @@ export class ClienteService {
     );
   }
 
-  /**
-   * Busca direta ao servidor, usada pela tela de edição: ela pode abrir por link
-   * direto, antes da listagem completa terminar de carregar.
-   */
+  // - busca direta ao servidor: a edição pode abrir por link antes da listagem carregar
   buscarPorId(id: number): Observable<Cliente> {
     return this.http
       .get<Cliente>(`/api/clientes/${id}`)
       .pipe(catchError(traduzirErro('Não foi possível carregar o cliente.')));
   }
 
-  /** Consulta na ViaCEP, via Feign no backend. Só preenche a tela; não persiste. */
+  // - consulta na viacep via feign no backend; só preenche a tela, não persiste
   buscarPorCep(cep: string): Observable<CepResponse> {
     return this.http
       .get<CepResponse>(`/api/clientes/cep/${cep}`)
@@ -80,7 +65,7 @@ export class ClienteService {
     );
   }
 
-  /** Corpo do POST/PUT: e-mail em branco vira null, nunca string vazia — ver ClienteRequest. */
+  // - e-mail em branco vira null, nunca string vazia
   private corpo(request: ClienteRequest): ClienteRequest {
     return {
       nome: request.nome.trim(),

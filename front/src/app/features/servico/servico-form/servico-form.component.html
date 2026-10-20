@@ -1,0 +1,89 @@
+<section class="cadastro">
+  <header class="cadastro__topo">
+    <div class="cadastro__id">
+      <p class="rotulo">{{ modoEdicao() ? 'Editando serviço #' + editandoId() : 'Novo serviço' }}</p>
+      <h1 class="cadastro__titulo">{{ modoEdicao() ? 'Editar serviço' : 'Cadastrar serviço' }}</h1>
+    </div>
+
+    <a class="botao-secundario" mdbRipple routerLink="/servicos">Voltar</a>
+  </header>
+
+  <hr class="regua" />
+
+  <form class="formulario" [formGroup]="form" (ngSubmit)="salvar()">
+    <div class="painel">
+      <section class="bloco">
+        <div class="bloco__topo">
+          <h2 class="rotulo">01 Dados</h2>
+        </div>
+
+        <div class="formulario__par">
+          <mdb-form-control>
+            <input mdbInput type="text" id="nome" class="form-control" formControlName="nome" autocomplete="off" />
+            <label mdbLabel class="form-label" for="nome">Nome do serviço</label>
+          </mdb-form-control>
+        </div>
+
+        <div class="formulario__par formulario__par--espacado">
+          <mdb-form-control>
+            <input
+              mdbInput
+              type="number"
+              id="valor"
+              class="form-control"
+              formControlName="valor"
+              min="0.01"
+              step="0.01"
+              inputmode="decimal"
+            />
+            <label mdbLabel class="form-label" for="valor">Valor (R$)</label>
+          </mdb-form-control>
+
+          <mdb-form-control>
+            <input
+              mdbInput
+              type="number"
+              id="duracaoMinutos"
+              class="form-control"
+              formControlName="duracaoMinutos"
+              min="1"
+              step="5"
+              inputmode="numeric"
+            />
+            <label mdbLabel class="form-label" for="duracaoMinutos">Duração (minutos)</label>
+          </mdb-form-control>
+        </div>
+
+        @if (invalido('nome')) {
+          <p class="aviso">O nome é obrigatório</p>
+        } @else if (invalido('valor')) {
+          <p class="aviso">Informe um valor maior que zero</p>
+        } @else if (invalido('duracaoMinutos')) {
+          <p class="aviso">Informe a duração em minutos</p>
+        }
+      </section>
+
+      <section class="bloco">
+        <div class="bloco__topo">
+          <h2 class="rotulo">02 Situação</h2>
+          <span class="bloco__meta">Inativo some do agendamento</span>
+        </div>
+
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="ativo" formControlName="ativo" />
+          <label class="form-check-label" for="ativo">Serviço ativo</label>
+        </div>
+      </section>
+    </div>
+
+    @if (erro(); as falha) {
+      <p class="alerta alerta--erro" role="alert">{{ falha }}</p>
+    }
+
+    <div class="formulario__acoes">
+      <button type="submit" class="botao-principal formulario__enviar" mdbRipple [disabled]="salvando()">
+        {{ salvando() ? 'Salvando...' : modoEdicao() ? 'Salvar alterações' : 'Cadastrar serviço' }}
+      </button>
+    </div>
+  </form>
+</section>

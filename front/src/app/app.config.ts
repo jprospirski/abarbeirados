@@ -7,7 +7,7 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 
 import { routes } from './app.routes';
 
-// Sem isto o pipe currency escreve "BRL 45.00" em vez de "R$ 45,00".
+// - sem isto o pipe currency escreve "brl 45.00" em vez de "r$ 45,00"
 registerLocaleData(localePt);
 
 export const appConfig: ApplicationConfig = {
@@ -15,8 +15,7 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(),
-    // Exigido pelos componentes do MDB (ripple, form-control): sem isto eles
-    // sobem, mas as transições ficam mudas.
+    // - exigido pelos componentes do mdb (ripple, form-control): sem isto as transições ficam mudas
     provideAnimations(),
     { provide: LOCALE_ID, useValue: 'pt-BR' },
   ],

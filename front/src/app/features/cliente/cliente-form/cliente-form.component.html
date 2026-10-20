@@ -12,7 +12,6 @@
 
   <form class="formulario" [formGroup]="form" (ngSubmit)="salvar()">
     <div class="painel">
-      <!-- --------------------------------------------------- dados -->
       <section class="bloco">
         <div class="bloco__topo">
           <h2 class="rotulo">01 Dados</h2>
@@ -25,7 +24,17 @@
           </mdb-form-control>
 
           <mdb-form-control>
-            <input mdbInput type="tel" id="telefone" class="form-control" formControlName="telefone" autocomplete="off" />
+            <input
+              mdbInput
+              type="tel"
+              id="telefone"
+              class="form-control"
+              formControlName="telefone"
+              inputmode="numeric"
+              maxlength="11"
+              autocomplete="off"
+              (input)="somenteDigitos($event)"
+            />
             <label mdbLabel class="form-label" for="telefone">Telefone</label>
           </mdb-form-control>
         </div>
@@ -37,14 +46,15 @@
           </mdb-form-control>
         </div>
 
-        @if (invalido('nome') || invalido('telefone')) {
+        @if (telefoneForaDoPadrao) {
+          <p class="aviso">Telefone deve ter 10 ou 11 dígitos, só números (DDD + número)</p>
+        } @else if (invalido('nome') || invalido('telefone')) {
           <p class="aviso">Nome e telefone são obrigatórios</p>
         } @else if (invalido('email')) {
           <p class="aviso">Informe um e-mail válido ou deixe o campo em branco</p>
         }
       </section>
 
-      <!-- -------------------------------------------------- endereço -->
       <section class="bloco">
         <div class="bloco__topo">
           <h2 class="rotulo">02 Endereço</h2>

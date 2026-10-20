@@ -1,7 +1,4 @@
-// Espelho dos records em `uniamerica.abarbeirados.dto.cliente`.
-// Mudou o Java, muda aqui.
-
-/** ClienteResponse */
+// - espelho dos records em uniamerica.abarbeirados.dto.cliente
 export interface Cliente {
   id: number;
   nome: string;
@@ -10,13 +7,7 @@ export interface Cliente {
   dataCadastro?: string;
 }
 
-/**
- * ClienteRequest — corpo do POST /api/clientes
- *
- * `email` vai como null quando não for informado, e nunca como string vazia:
- * se a coluna ganhar `unique`, vários NULL convivem numa restrição de unicidade,
- * mas várias strings vazias colidem entre si.
- */
+// - email vai como null quando não informado, nunca string vazia: vários null convivem num unique, strings vazias colidem
 export interface ClienteRequest {
   nome: string;
   email: string | null;

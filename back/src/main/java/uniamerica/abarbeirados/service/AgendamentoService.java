@@ -18,9 +18,11 @@ import uniamerica.abarbeirados.dto.agendamento.AtualizarStatusRequest;
 import uniamerica.abarbeirados.exception.ResourceNotFoundException;
 import uniamerica.abarbeirados.mapper.AgendamentoMapper;
 import uniamerica.abarbeirados.model.Agendamento;
+import uniamerica.abarbeirados.model.Barbeiro;
 import uniamerica.abarbeirados.model.Cliente;
 import uniamerica.abarbeirados.model.Servico;
 import uniamerica.abarbeirados.repository.AgendamentoRepository;
+import uniamerica.abarbeirados.repository.BarbeiroRepository;
 import uniamerica.abarbeirados.repository.ClienteRepository;
 import uniamerica.abarbeirados.repository.ServicoRepository;
 
@@ -30,15 +32,17 @@ public class AgendamentoService {
 
     private final AgendamentoRepository agendamentoRepository;
     private final ClienteRepository clienteRepository;
+    private final BarbeiroRepository barbeiroRepository;
     private final ServicoRepository servicoRepository;
     private final AgendamentoMapper agendamentoMapper;
 
     @Transactional
     public AgendamentoResponse criar(AgendamentoRequest request) {
         Cliente cliente = buscarCliente(request.clienteId());
+        Barbeiro barbeiro = buscarBarbeiro(request.barbeiroId());
         Servico servico = buscarServico(request.servicoId());
 
-        Agendamento agendamento = agendamentoMapper.forEntity(request, cliente, servico);
+        Agendamento agendamento = agendamentoMapper.forEntity(request, cliente, barbeiro, servico);
         return agendamentoMapper.forResponse(agendamentoRepository.save(agendamento));
     }
 
@@ -77,9 +81,10 @@ public class AgendamentoService {
     public AgendamentoResponse atualizar(Long id, AgendamentoRequest request) {
         Agendamento agendamento = buscarEntidadePorId(id);
         Cliente cliente = buscarCliente(request.clienteId());
+        Barbeiro barbeiro = buscarBarbeiro(request.barbeiroId());
         Servico servico = buscarServico(request.servicoId());
 
-        agendamentoMapper.updateEntity(request, agendamento, cliente, servico);
+        agendamentoMapper.updateEntity(request, agendamento, cliente, barbeiro, servico);
         return agendamentoMapper.forResponse(agendamentoRepository.save(agendamento));
     }
 
@@ -97,7 +102,7 @@ public class AgendamentoService {
         agendamentoRepository.delete(agendamento);
     }
 
-    /** Busca livre pelo nome do cliente ou do serviço. */
+    /** Busca livre pelo nome do cliente, do barbeiro ou do serviço. */
     private boolean combinaComBusca(Agendamento agendamento, String busca) {
         if (busca == null || busca.isBlank()) {
             return true;
@@ -106,6 +111,7 @@ public class AgendamentoService {
         String termo = busca.toLowerCase();
 
         return agendamento.getCliente().getNome().toLowerCase().contains(termo)
+                || agendamento.getBarbeiro().getNome().toLowerCase().contains(termo)
                 || agendamento.getServico().getNome().toLowerCase().contains(termo);
     }
 
@@ -117,6 +123,11 @@ public class AgendamentoService {
     private Cliente buscarCliente(Long id) {
         return clienteRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com id " + id));
+    }
+
+    private Barbeiro buscarBarbeiro(Long id) {
+        return barbeiroRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Barbeiro não encontrado com id " + id));
     }
 
     private Servico buscarServico(Long id) {
