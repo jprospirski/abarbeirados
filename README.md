@@ -6,7 +6,7 @@ atendendo a uma demanda real encaminhada à faculdade.
 
 API REST em Spring Boot com Cliente, Serviço, Barbeiro e Agendamento; frontend em
 Angular consumindo a API, com autenticação, agenda com controle de conflito de
-horário e telas de cadastro completas. Roda ponta a ponta, com banco H2 em memória
+horário e telas de cadastro completas. Roda ponta a ponta, com banco PostgreSQL
 versionado por Flyway.
 
 ## Equipe
@@ -21,7 +21,7 @@ versionado por Flyway.
 ## Stack
 
 **Back-end** — Java 17 · Spring Boot 4.1.0 (Web MVC, Data JPA, Bean Validation,
-OpenFeign) · Lombok · Flyway · H2 em memória · springdoc-openapi (Swagger UI) · SLF4J
+OpenFeign) · Lombok · Flyway · PostgreSQL · springdoc-openapi (Swagger UI) · SLF4J
 
 **Front-end** — Angular 19.2 (standalone components, signals, `@if`/`@for`) ·
 TypeScript 5.7 · MDB-Angular UI Kit + Bootstrap 5 · SweetAlert2
@@ -83,13 +83,12 @@ execução direto pelo navegador (ou importáveis no Insomnia/Postman a partir d
 
 ### Banco de dados
 
-**Console do H2** — `http://localhost:8080/h2-console`, JDBC URL
-`jdbc:h2:mem:abarbeirados`, usuário `sa`, senha em branco.
+**PostgreSQL** — crie o banco `abarbeirados` e ajuste usuário/senha em
+`back/src/main/resources/application.properties` (padrão: `postgres` / `postgres`,
+`localhost:5432`).
 
-O banco é em memória e nasce vazio a cada reinicialização. Não é preciso cadastrar
-nada à mão: as migrations do Flyway (`back/src/main/resources/db/migration`)
-recriam o schema e populam o catálogo de serviços automaticamente na inicialização
-do backend.
+As migrations do Flyway (`back/src/main/resources/db/migration`) criam o schema e
+populam o catálogo de serviços automaticamente na inicialização do backend.
 
 ---
 

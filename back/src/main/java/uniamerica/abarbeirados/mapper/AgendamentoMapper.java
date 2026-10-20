@@ -14,12 +14,13 @@ import uniamerica.abarbeirados.model.StatusAgendamento;
 public class AgendamentoMapper {
 
     /*
-     * Cliente, Servico e Barbeiro chegam prontos: quem resolve os ids e o service,
-     * que e a camada com acesso aos repositorios.
+     * Cliente, Barbeiro e Servico chegam prontos: quem resolve os ids e o
+     * service, que e a camada com acesso aos repositorios.
      */
-    public Agendamento forEntity(AgendamentoRequest request, Cliente cliente, Servico servico, Barbeiro barbeiro) {
+    public Agendamento forEntity(AgendamentoRequest request, Cliente cliente, Barbeiro barbeiro, Servico servico) {
         return Agendamento.builder()
                 .cliente(cliente)
+                .barbeiro(barbeiro)
                 .servico(servico)
                 .barbeiro(barbeiro)
                 .dataHora(request.dataHora())
@@ -30,8 +31,10 @@ public class AgendamentoMapper {
                 .build();
     }
 
-    public void updateEntity(AgendamentoRequest request, Agendamento agendamento, Cliente cliente, Servico servico, Barbeiro barbeiro) {
+    public void updateEntity(AgendamentoRequest request, Agendamento agendamento, Cliente cliente,
+                             Barbeiro barbeiro, Servico servico) {
         agendamento.setCliente(cliente);
+        agendamento.setBarbeiro(barbeiro);
         agendamento.setServico(servico);
         agendamento.setBarbeiro(barbeiro);
         agendamento.setDataHora(request.dataHora());
@@ -42,6 +45,7 @@ public class AgendamentoMapper {
 
     public AgendamentoResponse forResponse(Agendamento agendamento) {
         Cliente cliente = agendamento.getCliente();
+        Barbeiro barbeiro = agendamento.getBarbeiro();
         Servico servico = agendamento.getServico();
         Barbeiro barbeiro = agendamento.getBarbeiro();
 
@@ -50,6 +54,8 @@ public class AgendamentoMapper {
                 cliente.getId(),
                 cliente.getNome(),
                 cliente.getTelefone(),
+                barbeiro.getId(),
+                barbeiro.getNome(),
                 servico.getId(),
                 servico.getNome(),
                 barbeiro.getId(),
