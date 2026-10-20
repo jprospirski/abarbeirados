@@ -28,6 +28,10 @@ public class Agendamento {
     private Cliente cliente;
 
     @ManyToOne(optional = false)
+    @JoinColumn(name = "barbeiro_id", nullable = false)
+    private Barbeiro barbeiro;
+
+    @ManyToOne(optional = false)
     @JoinColumn(name = "servico_id", nullable = false)
     private Servico servico;
 

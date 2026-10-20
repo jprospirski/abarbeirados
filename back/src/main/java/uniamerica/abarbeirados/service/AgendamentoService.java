@@ -37,6 +37,7 @@ public class AgendamentoService {
 
     private final AgendamentoRepository agendamentoRepository;
     private final ClienteRepository clienteRepository;
+    private final BarbeiroRepository barbeiroRepository;
     private final ServicoRepository servicoRepository;
     private final BarbeiroRepository barbeiroRepository;
     private final AgendamentoMapper agendamentoMapper;
@@ -44,18 +45,12 @@ public class AgendamentoService {
     @Transactional
     public AgendamentoResponse criar(AgendamentoRequest request) {
         Cliente cliente = buscarCliente(request.clienteId());
+        Barbeiro barbeiro = buscarBarbeiro(request.barbeiroId());
         Servico servico = buscarServico(request.servicoId());
         Barbeiro barbeiro = buscarBarbeiro(request.barbeiroId());
 
-        validarConflito(barbeiro, request.dataHora(), servico.getDuracaoMinutos(), null);
-
-        Agendamento agendamento = agendamentoRepository.save(
-                agendamentoMapper.forEntity(request, cliente, servico, barbeiro));
-
-        log.info("Agendamento {} criado para cliente {} com barbeiro {} em {}",
-                agendamento.getId(), cliente.getNome(), barbeiro.getNome(), request.dataHora());
-
-        return agendamentoMapper.forResponse(agendamento);
+        Agendamento agendamento = agendamentoMapper.forEntity(request, cliente, barbeiro, servico);
+        return agendamentoMapper.forResponse(agendamentoRepository.save(agendamento));
     }
 
     @Transactional(readOnly = true)
@@ -93,18 +88,12 @@ public class AgendamentoService {
     public AgendamentoResponse atualizar(Long id, AgendamentoRequest request) {
         Agendamento agendamento = buscarEntidadePorId(id);
         Cliente cliente = buscarCliente(request.clienteId());
+        Barbeiro barbeiro = buscarBarbeiro(request.barbeiroId());
         Servico servico = buscarServico(request.servicoId());
         Barbeiro barbeiro = buscarBarbeiro(request.barbeiroId());
 
-        validarConflito(barbeiro, request.dataHora(), servico.getDuracaoMinutos(), id);
-
-        agendamentoMapper.updateEntity(request, agendamento, cliente, servico, barbeiro);
-        agendamentoRepository.save(agendamento);
-
-        log.info("Agendamento {} atualizado para cliente {} com barbeiro {} em {}",
-                agendamento.getId(), cliente.getNome(), barbeiro.getNome(), request.dataHora());
-
-        return agendamentoMapper.forResponse(agendamento);
+        agendamentoMapper.updateEntity(request, agendamento, cliente, barbeiro, servico);
+        return agendamentoMapper.forResponse(agendamentoRepository.save(agendamento));
     }
 
     @Transactional
@@ -152,7 +141,7 @@ public class AgendamentoService {
         }
     }
 
-    /** Busca livre pelo nome do cliente ou do serviço. */
+    /** Busca livre pelo nome do cliente, do barbeiro ou do serviço. */
     private boolean combinaComBusca(Agendamento agendamento, String busca) {
         if (busca == null || busca.isBlank()) {
             return true;
@@ -161,6 +150,7 @@ public class AgendamentoService {
         String termo = busca.toLowerCase();
 
         return agendamento.getCliente().getNome().toLowerCase().contains(termo)
+                || agendamento.getBarbeiro().getNome().toLowerCase().contains(termo)
                 || agendamento.getServico().getNome().toLowerCase().contains(termo);
     }
 
@@ -174,13 +164,13 @@ public class AgendamentoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com id " + id));
     }
 
-    private Servico buscarServico(Long id) {
-        return servicoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Serviço não encontrado com id " + id));
-    }
-
     private Barbeiro buscarBarbeiro(Long id) {
         return barbeiroRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Barbeiro não encontrado com id " + id));
+    }
+
+    private Servico buscarServico(Long id) {
+        return servicoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Serviço não encontrado com id " + id));
     }
 }

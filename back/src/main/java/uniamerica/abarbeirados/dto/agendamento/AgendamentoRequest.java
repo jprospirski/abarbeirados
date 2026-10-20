@@ -11,6 +11,9 @@ public record AgendamentoRequest(
         @NotNull(message = "O cliente é obrigatório")
         Long clienteId,
 
+        @NotNull(message = "O barbeiro é obrigatório")
+        Long barbeiroId,
+
         @NotNull(message = "O serviço é obrigatório")
         Long servicoId,
 
