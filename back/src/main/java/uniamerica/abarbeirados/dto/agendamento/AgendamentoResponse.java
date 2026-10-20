@@ -20,6 +20,8 @@ public record AgendamentoResponse(
         String barbeiroNome,
         Long servicoId,
         String servicoNome,
+        Long barbeiroId,
+        String barbeiroNome,
         BigDecimal valor,
         Integer duracaoMinutos,
         LocalDateTime dataHora,

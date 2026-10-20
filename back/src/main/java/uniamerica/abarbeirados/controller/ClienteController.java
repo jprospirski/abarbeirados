@@ -8,8 +8,10 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import uniamerica.abarbeirados.dto.cep.CepResponse;
 import uniamerica.abarbeirados.dto.cliente.ClienteRequest;
 import uniamerica.abarbeirados.dto.cliente.ClienteResponse;
+import uniamerica.abarbeirados.service.CepService;
 import uniamerica.abarbeirados.service.ClienteService;
 
 @RestController
@@ -18,6 +20,7 @@ import uniamerica.abarbeirados.service.ClienteService;
 public class ClienteController {
 
     private final ClienteService clienteService;
+    private final CepService cepService;
 
     @PostMapping
     public ResponseEntity<ClienteResponse> criar(@Valid @RequestBody ClienteRequest request) {
@@ -29,6 +32,15 @@ public class ClienteController {
     public ResponseEntity<List<ClienteResponse>> listar(
             @RequestParam(required = false) String nome) {
         return ResponseEntity.ok(clienteService.listar(nome));
+    }
+
+    /**
+     * Consulta de CEP na ViaCEP, usada pelo formulario de cliente para preencher
+     * o endereco. E so consulta: nada de endereco e gravado na tabela clientes.
+     */
+    @GetMapping("/cep/{cep}")
+    public ResponseEntity<CepResponse> buscarCep(@PathVariable String cep) {
+        return ResponseEntity.ok(cepService.buscar(cep));
     }
 
     @GetMapping("/{id}")

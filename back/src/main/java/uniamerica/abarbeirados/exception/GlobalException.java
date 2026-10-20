@@ -12,16 +12,18 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import lombok.extern.slf4j.Slf4j;
 import uniamerica.abarbeirados.dto.error.ApiError;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalException {
 
-    // Validation errors from @Valid (invalid fields in the request body)
+    // - campo inválido no corpo (@Valid): devolve um mapa campo -> mensagem para o front saber o que corrigir
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidationException(MethodArgumentNotValidException ex) {
         Map<String, String> fields = new LinkedHashMap<>();
@@ -33,14 +35,14 @@ public class GlobalException {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
 
-    // Parameter validation errors (e.g. @RequestParam, @PathVariable with @Validated)
+    // - mesma ideia, para @RequestParam/@PathVariable validados com @Validated, que não passam pelo @Valid do corpo
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiError> handleConstraintViolation(ConstraintViolationException ex) {
         ApiError apiError = buildError(HttpStatus.BAD_REQUEST, ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
 
-    // Path/query parameter with an incompatible type (e.g. invalid StatusAgendamento enum value)
+    // - parâmetro de tipo errado na url, ex.: status de agendamento que não existe
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
         String message = String.format("Valor inválido para o parâmetro '%s': %s", ex.getName(), ex.getValue());
@@ -48,36 +50,37 @@ public class GlobalException {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
 
-    // Required parameter missing from the request
+    // - faltou um parâmetro obrigatório na requisição
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ApiError> handleMissingParam(MissingServletRequestParameterException ex) {
         ApiError apiError = buildError(HttpStatus.BAD_REQUEST, ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
 
-    // Malformed or unreadable JSON in the request body
+    // - json malformado ou corpo vazio quando era esperado um corpo
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiError> handleNotReadable(HttpMessageNotReadableException ex) {
         ApiError apiError = buildError(HttpStatus.BAD_REQUEST, "Corpo da requisição inválido ou malformado");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
 
-    // Business rule violations
+    // - regra de negócio quebrada, ex.: marcar em horário já ocupado
     @ExceptionHandler(NegocioException.class)
     public ResponseEntity<ApiError> handleBusinessException(NegocioException ex) {
+        log.warn(ex.getMessage());
         ApiError apiError = buildError(HttpStatus.BAD_REQUEST, ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
 
-    // Resource not found
+    // - id que não existe no banco (cliente, serviço, barbeiro ou agendamento)
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiError> handleResourceNotFound(ResourceNotFoundException ex) {
+        log.warn(ex.getMessage());
         ApiError apiError = buildError(HttpStatus.NOT_FOUND, ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
     }
 
-    // Violacao de integridade no banco. O caso comum e tentar excluir um cliente
-    // ou servico que ainda tem agendamento apontando para ele.
+    // - violação de integridade: o caso comum é excluir cliente/serviço/barbeiro ainda usado por um agendamento
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         ApiError apiError = buildError(HttpStatus.CONFLICT,
@@ -85,18 +88,18 @@ public class GlobalException {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(apiError);
     }
 
-    // URL que nao casa com nenhum endpoint. Sem este handler a excecao caia no
-    // handler generico abaixo e virava 500, escondendo um simples erro de rota.
+    // - url sem endpoint; sem este handler caía no genérico e virava 500 escondendo uma rota errada
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiError> handleNoResourceFound(NoResourceFoundException ex) {
         ApiError apiError = buildError(HttpStatus.NOT_FOUND, "Rota não encontrada: " + ex.getResourcePath());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
     }
 
-    // Any other unhandled exception
+    // - rede de segurança: loga completo no servidor mas não devolve ex.getMessage(), que vazaria detalhe interno
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGenericException(Exception ex) {
-        ApiError apiError = buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno: " + ex.getMessage());
+        log.error("Erro interno não tratado", ex);
+        ApiError apiError = buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno no servidor");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiError);
     }
 

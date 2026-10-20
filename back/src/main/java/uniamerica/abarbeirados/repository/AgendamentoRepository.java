@@ -4,6 +4,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import uniamerica.abarbeirados.model.Agendamento;
 
 public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> {
-    // Filtro (busca/dia) e agrupamento por dia são feitos em memória no service por enquanto.
-    // Se a base de dados crescer, migrar para @Query com filtros no banco.
+    // - filtro por busca/dia e agrupamento são feitos em memória no service; migrar para @Query se a base crescer
 }
