@@ -22,7 +22,6 @@ public class AgendamentoMapper {
                 .cliente(cliente)
                 .barbeiro(barbeiro)
                 .servico(servico)
-                .barbeiro(barbeiro)
                 .dataHora(request.dataHora())
                 .observacoes(request.observacoes())
                 .status(StatusAgendamento.AGENDADO)
@@ -36,7 +35,6 @@ public class AgendamentoMapper {
         agendamento.setCliente(cliente);
         agendamento.setBarbeiro(barbeiro);
         agendamento.setServico(servico);
-        agendamento.setBarbeiro(barbeiro);
         agendamento.setDataHora(request.dataHora());
         agendamento.setObservacoes(request.observacoes());
         agendamento.setValor(servico.getValor());
@@ -47,7 +45,6 @@ public class AgendamentoMapper {
         Cliente cliente = agendamento.getCliente();
         Barbeiro barbeiro = agendamento.getBarbeiro();
         Servico servico = agendamento.getServico();
-        Barbeiro barbeiro = agendamento.getBarbeiro();
 
         return new AgendamentoResponse(
                 agendamento.getId(),
@@ -58,8 +55,6 @@ public class AgendamentoMapper {
                 barbeiro.getNome(),
                 servico.getId(),
                 servico.getNome(),
-                barbeiro.getId(),
-                barbeiro.getNome(),
                 agendamento.getValor(),
                 agendamento.getDuracaoMinutos(),
                 agendamento.getDataHora(),
