@@ -15,7 +15,8 @@ public record ServicoRequest(
         @NotNull(message = "A duração é obrigatória")
         @Positive(message = "A duração deve ser maior que zero")
         Integer duracaoMinutos,
-        // - opcional: sem informar, o serviço nasce ativo
+        // Opcional: quem nao informa cria o servico ativo, que era o comportamento
+        // antes deste campo existir.
         Boolean ativo
 ) {
 
