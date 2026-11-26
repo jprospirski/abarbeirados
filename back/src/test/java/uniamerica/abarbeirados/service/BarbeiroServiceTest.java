@@ -134,7 +134,8 @@ class BarbeiroServiceTest {
     @Test
     void listar_quandoNomeBrancoEApenasAtivosTrue_retornaSomenteAtivos() {
         // Arrange
-        when(barbeiroRepository.findByAtivo(true)).thenReturn(List.of(barbeiro));
+        // - o filtro de ativos e aplicado em memoria sobre o findAll, para combinar com o filtro de nome
+        when(barbeiroRepository.findAll()).thenReturn(List.of(barbeiro));
         when(barbeiroMapper.forResponse(barbeiro)).thenReturn(response);
 
         // Act
@@ -142,8 +143,8 @@ class BarbeiroServiceTest {
 
         // Assert
         assertThat(resultado).containsExactly(response);
-        verify(barbeiroRepository).findByAtivo(true);
-        verify(barbeiroRepository, never()).findAll();
+        verify(barbeiroRepository).findAll();
+        verify(barbeiroRepository, never()).findByAtivo(any());
         verify(barbeiroRepository, never()).findByNomeContainingIgnoreCase(any());
     }
 
