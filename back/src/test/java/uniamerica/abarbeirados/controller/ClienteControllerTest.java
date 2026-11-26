@@ -42,6 +42,9 @@ class ClienteControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
+    private uniamerica.abarbeirados.service.CepService cepService;
+
+    @MockitoBean
     private ClienteService clienteService;
 
     private ClienteRequest request;
@@ -143,10 +146,10 @@ class ClienteControllerTest {
     }
 
     @Test
-    void criar_quandoTelefoneVazio_retornaErroDeValidacao() throws Exception {
-        // Arrange
+    void criar_quandoTelefoneAusente_retornaErroDeValidacao() throws Exception {
+        // Arrange (telefone nulo so viola o @NotBlank; vazio violaria tambem o @Pattern)
         String corpo = """
-                {"nome": "Ana", "email": "ana@example.com", "telefone": ""}
+                {"nome": "Ana", "email": "ana@example.com", "telefone": null}
                 """;
 
         // Act
