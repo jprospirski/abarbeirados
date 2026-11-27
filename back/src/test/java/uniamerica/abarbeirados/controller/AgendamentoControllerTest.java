@@ -3,12 +3,15 @@ package uniamerica.abarbeirados.controller;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import uniamerica.abarbeirados.security.JwtService;
 import uniamerica.abarbeirados.dto.agendamento.AgendaDoDiaResponse;
 import uniamerica.abarbeirados.dto.agendamento.AgendamentoRequest;
 import uniamerica.abarbeirados.dto.agendamento.AgendamentoResponse;
@@ -38,6 +41,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static uniamerica.abarbeirados.controller.ControllerErrorAssertions.assertApiError;
 
 @WebMvcTest(AgendamentoController.class)
+// - o teste e do controller: os filtros de seguranca ficam fora e o JWT e coberto nos testes de security
+@AutoConfigureMockMvc(addFilters = false)
 class AgendamentoControllerTest {
 
     private static final String ROTA = "/api/agendamentos";
@@ -54,6 +59,13 @@ class AgendamentoControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    // - dependencias do JwtAuthenticationFilter, que o WebMvcTest ainda instancia
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private UserDetailsService userDetailsService;
 
     @MockitoBean
     private AgendamentoService agendamentoService;

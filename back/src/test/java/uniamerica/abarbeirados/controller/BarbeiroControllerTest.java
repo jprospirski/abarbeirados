@@ -3,11 +3,14 @@ package uniamerica.abarbeirados.controller;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import uniamerica.abarbeirados.security.JwtService;
 import uniamerica.abarbeirados.dto.barbeiro.BarbeiroRequest;
 import uniamerica.abarbeirados.dto.barbeiro.BarbeiroResponse;
 import uniamerica.abarbeirados.dto.barbeiro.ServicoResumoResponse;
@@ -33,6 +36,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static uniamerica.abarbeirados.controller.ControllerErrorAssertions.assertApiError;
 
 @WebMvcTest(BarbeiroController.class)
+// - o teste e do controller: os filtros de seguranca ficam fora e o JWT e coberto nos testes de security
+@AutoConfigureMockMvc(addFilters = false)
 class BarbeiroControllerTest {
 
     private static final String ROTA = "/api/barbeiros";
@@ -42,6 +47,13 @@ class BarbeiroControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    // - dependencias do JwtAuthenticationFilter, que o WebMvcTest ainda instancia
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private UserDetailsService userDetailsService;
 
     @MockitoBean
     private BarbeiroService barbeiroService;
