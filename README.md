@@ -76,6 +76,25 @@ Backend em `http://localhost:8080`, frontend em `http://localhost:4200`. O
 `proxy.conf.json` encaminha `/api` para a 8080, então não há CORS em
 desenvolvimento.
 
+### Login
+
+A tela inicial exige login com autenticação JWT. Não há usuário padrão: crie o
+primeiro em **Criar usuário** (`/cadastro`) e depois entre com ele. A senha é
+gravada em BCrypt e o token expira em 1 hora.
+
+### Variáveis de ambiente
+
+Nenhuma credencial fica no código. `DB_PASSWORD` é sempre obrigatória; as demais
+têm um padrão de desenvolvimento e devem ser definidas em produção.
+
+| Variável | Para que serve | Padrão em desenvolvimento |
+|---|---|---|
+| `DB_URL` | URL JDBC do PostgreSQL | `jdbc:postgresql://localhost:5432/abarbeirados` |
+| `DB_USERNAME` | usuário do banco | `postgres` |
+| `DB_PASSWORD` | senha do banco | sem padrão (obrigatória) |
+| `JWT_SECRET` | chave de assinatura do token, em Base64 (`openssl rand -base64 48`) | chave aleatória a cada subida |
+| `CORS_ALLOWED_ORIGINS` | origens liberadas no CORS, separadas por vírgula | `http://localhost:4200` |
+
 ### Documentação da API
 
 Com o backend no ar, a documentação interativa fica em
@@ -91,6 +110,62 @@ desenvolvimento: usuário `postgres` em `localhost:5432`; a senha não tem padr�
 
 As migrations do Flyway (`back/src/main/resources/db/migration`) criam o schema e
 populam o catálogo de serviços automaticamente na inicialização do backend.
+
+## Deploy na AWS (EC2)
+
+O script `provisionar-ec2.sh`, na raiz do repositório, prepara uma instância do
+zero: instala JDK 17, Node.js 22, PostgreSQL e Apache, cria o banco, gera as
+credenciais, faz o build do back-end e do front-end e deixa tudo no ar.
+
+**1. Crie a instância**
+
+- AMI **Ubuntu Server 26.04 LTS** (ou 24.04), tipo `t3.small` ou maior, disco de
+  8 GB ou mais.
+- **Security Group** com apenas duas regras de entrada:
+
+  | Porta | Origem | Para quê |
+  |---|---|---|
+  | 22 (SSH) | somente o seu IP | administração |
+  | 80 (HTTP) | `0.0.0.0/0` | aplicação |
+
+  As portas 8080 (back-end) e 5432 (PostgreSQL) **não** são liberadas: os dois
+  escutam só em `127.0.0.1`, e quem atende a internet é o Apache.
+
+**2. Execute o script**
+
+```bash
+ssh -i sua-chave.pem ubuntu@IP_PUBLICO
+git clone https://github.com/jprospirski/abarbeirados.git
+cd abarbeirados
+sudo bash provisionar-ec2.sh
+```
+
+Leva alguns minutos. Ao final o script mostra o endereço da aplicação. Acesse
+`http://IP_PUBLICO/cadastro` para criar o primeiro usuário e depois faça login.
+
+O script deve ser executado de dentro da pasta do projeto, onde ficam `back/` e
+`front/`. Para atualizar a aplicação depois, rode `git pull` nessa pasta e
+execute o script de novo: ele mantém as credenciais já geradas, refaz o build e
+reinicia o serviço.
+
+**O que o script configura**
+
+| Item | Onde fica |
+|---|---|
+| Back-end (serviço systemd `abarbeirados`) | `/opt/abarbeirados/abarbeirados.jar` |
+| Front-end (build de produção do Angular) | `/var/www/abarbeirados` |
+| Apache (fallback de rotas SPA e proxy de `/api`) | `/etc/apache2/sites-available/abarbeirados.conf` |
+| Credenciais (senha do banco e chave do JWT, geradas na instância) | `/etc/abarbeirados.env`, legível só pelo root |
+
+**Logs e operação**
+
+```bash
+sudo journalctl -u abarbeirados -f                 # log do back-end em tempo real
+sudo journalctl -u abarbeirados -n 100 --no-pager  # últimas 100 linhas
+sudo systemctl status abarbeirados                 # situação do serviço
+sudo systemctl restart abarbeirados                # reiniciar o back-end
+sudo tail -f /var/log/apache2/access.log /var/log/apache2/error.log
+```
 
 ---
 
