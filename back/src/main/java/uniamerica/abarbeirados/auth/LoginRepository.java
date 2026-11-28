@@ -8,4 +8,6 @@ public interface LoginRepository extends JpaRepository<Usuario, Long> {
 
     Optional<Usuario> findByUsername(String login);
 
+    boolean existsByUsername(String username);
+
 }
