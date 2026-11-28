@@ -64,6 +64,13 @@ public class GlobalException {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
 
+    // - login com usuário ou senha errados: 401, sem dizer qual dos dois falhou
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<ApiError> handleAuthentication(org.springframework.security.core.AuthenticationException ex) {
+        ApiError apiError = buildError(HttpStatus.UNAUTHORIZED, "Usuário ou senha inválidos");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiError);
+    }
+
     // - regra de negócio quebrada, ex.: marcar em horário já ocupado
     @ExceptionHandler(NegocioException.class)
     public ResponseEntity<ApiError> handleBusinessException(NegocioException ex) {
