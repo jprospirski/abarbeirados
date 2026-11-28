@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 
 import { authGuard } from './core/guards/auth.guard';
 
-// - tudo atrás do authGuard, menos /login; cada cadastro é um grupo de filhas: '' lista, novo cria, :id/editar edita
+// - tudo atrás do authGuard, menos /login e /cadastro; cada cadastro é um grupo de filhas: '' lista, novo cria, :id/editar edita
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'agendamentos' },
   {
@@ -10,6 +10,12 @@ export const routes: Routes = [
     title: 'Entrar | Abarbeirados',
     loadComponent: () =>
       import('./features/auth/login/login.component').then((m) => m.LoginComponent),
+  },
+  {
+    path: 'cadastro',
+    title: 'Criar usuário | Abarbeirados',
+    loadComponent: () =>
+      import('./features/auth/registro/registro.component').then((m) => m.RegistroComponent),
   },
   {
     path: '',
