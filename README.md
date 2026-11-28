@@ -1,165 +1,13 @@
 # Abarbeirados
 
-Sistema de gestão de uma barbearia desenvolvido como projeto acadêmico do 4º período de Engenharia de Software / Análise e Desenvolvimento de Sistemas da Uniamérica.
+Sistema de gestão de agendamentos para barbearia — projeto acadêmico do 4º período de
+Engenharia de Software / Análise e Desenvolvimento de Sistemas da **Uniamerica**,
+atendendo a uma demanda real encaminhada à faculdade.
 
-A aplicação reúne uma API REST em Spring Boot e uma interface web em Angular para administrar clientes, serviços, barbeiros e agendamentos.
-
-## Funcionalidades
-
-- Login e proteção das rotas da aplicação.
-- Cadastro, consulta, edição, busca e exclusão de clientes.
-- Cadastro e gerenciamento de serviços, com preço, duração e situação ativo/inativo.
-- Cadastro de barbeiros e associação dos serviços realizados por cada profissional.
-- Criação e edição de agendamentos com cliente, barbeiro, serviço, data, horário e observações.
-- Valor e duração do serviço preservados no histórico do agendamento.
-- Agenda diária com busca, filtro por data e diferentes formas de visualização.
-- Controle dos estados `AGENDADO`, `CONFIRMADO`, `CONCLUIDO` e `CANCELADO`.
-- Tratamento padronizado dos erros devolvidos pela API.
-- Documentação interativa da API com Swagger UI.
-
-## Tecnologias
-
-### Back-end
-
-- Java 17
-- Spring Boot 4.1
-- Spring Web MVC
-- Spring Data JPA
-- Bean Validation
-- PostgreSQL
-- Flyway
-- Lombok
-- springdoc-openapi / Swagger UI
-- JUnit 5, Mockito, MockMvc e JaCoCo
-
-### Front-end
-
-- Angular 19.2
-- TypeScript 5.7
-- Angular standalone components e signals
-- Reactive Forms
-- Bootstrap 5 e MDB Angular UI Kit
-- SweetAlert2
-- Jasmine e Karma
-
-## Estrutura do projeto
-
-```text
-abarbeirados/
-├── back/                 API Spring Boot
-│   └── src/
-│       ├── main/
-│       │   ├── java/     controllers, services, repositories, DTOs e entidades
-│       │   └── resources/ configurações e migrations do Flyway
-│       └── test/         testes de controllers, services, mappers e repositories
-└── front/                aplicação Angular
-    └── src/app/
-        ├── core/         models, services, guards e utilitários
-        ├── features/     telas organizadas por funcionalidade
-        └── shared/       componentes compartilhados
-```
-
-## Pré-requisitos
-
-- JDK 17 com a variável `JAVA_HOME` configurada.
-- PostgreSQL em execução.
-- Node.js e npm.
-
-## Configuração do banco
-
-Crie o banco de dados:
-
-```sql
-CREATE DATABASE abarbeirados;
-```
-
-Por padrão, o backend utiliza:
-
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/abarbeirados
-spring.datasource.username=postgres
-spring.datasource.password=postgres
-```
-
-Se necessário, ajuste esses valores em `back/src/main/resources/application.properties`.
-
-O Flyway cria e versiona o schema automaticamente. O Hibernate usa `ddl-auto=validate`, portanto a aplicação interrompe a inicialização se as entidades não corresponderem ao banco.
-
-## Executando o backend
-
-No Windows:
-
-```powershell
-cd back
-.\mvnw.cmd spring-boot:run
-```
-
-No Linux ou macOS:
-
-```bash
-cd back
-./mvnw spring-boot:run
-```
-
-O backend fica disponível em `http://localhost:8080`.
-
-## Executando o frontend
-
-Em outro terminal:
-
-```bash
-cd front
-npm ci
-npm start
-```
-
-Abra `http://localhost:4200`. Durante o desenvolvimento, o proxy do Angular encaminha as chamadas `/api` para o backend na porta 8080.
-
-### Acesso
-
-A autenticação atual é local e simulada no frontend:
-
-- Usuário: `admin`
-- Senha: `123456`
-
-## API
-
-| Recurso | Caminho base | Operações principais |
-|---|---|---|
-| Clientes | `/api/clientes` | criar, listar, buscar, atualizar e excluir |
-| Serviços | `/api/servicos` | criar, listar, filtrar, buscar, atualizar e excluir |
-| Barbeiros | `/api/barbeiros` | criar, listar, filtrar, buscar, consultar serviços, atualizar e excluir |
-| Agendamentos | `/api/agendamentos` | criar, listar, consultar agenda, buscar, atualizar, alterar status e excluir |
-
-Com o backend iniciado:
-
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
-- Especificação OpenAPI: `http://localhost:8080/v3/api-docs`
-
-## Testes e qualidade
-
-Execute os testes do backend:
-
-```powershell
-cd back
-.\mvnw.cmd test
-```
-
-Para executar também a verificação de cobertura:
-
-```powershell
-.\mvnw.cmd clean verify
-```
-
-Os testes de contexto e repository utilizam o PostgreSQL configurado na aplicação. O relatório do JaCoCo é gerado em `back/target/site/jacoco/index.html`, e o build exige cobertura mínima global de 90%.
-
-Para testar ou compilar o frontend:
-
-```bash
-cd front
-npm test
-npm run build
-```
+API REST em Spring Boot com Cliente, Serviço, Barbeiro e Agendamento; frontend em
+Angular consumindo a API, com autenticação, agenda com controle de conflito de
+horário e telas de cadastro completas. Roda ponta a ponta, com banco PostgreSQL
+versionado por Flyway.
 
 ## Equipe
 
@@ -170,6 +18,155 @@ npm run build
 | Christopher Adam Oliveira dos Santos | Desenvolvedor | `Alok` |
 | Leonardo Barth | Desenvolvedor | `Leo` |
 
+## Stack
+
+**Back-end** — Java 17 · Spring Boot 4.1.0 (Web MVC, Data JPA, Bean Validation,
+OpenFeign) · Lombok · Flyway · PostgreSQL · springdoc-openapi (Swagger UI) · SLF4J
+
+**Front-end** — Angular 19.2 (standalone components, signals, `@if`/`@for`) ·
+TypeScript 5.7 · MDB-Angular UI Kit + Bootstrap 5 · SweetAlert2
+
+## Funcionalidades
+
+- Login com controle de acesso por rota
+- CRUD de clientes, com busca por nome e preenchimento de endereço por CEP
+  (integração com a API ViaCEP via OpenFeign)
+- CRUD de serviços, com valor, duração, situação ativo/inativo e combinações
+- CRUD de barbeiros, com os serviços que cada um executa
+- Agendamentos com cliente, serviço, barbeiro, data/hora e observações; valor e
+  duração congelados do serviço no momento da marcação
+- Grade de disponibilidade de horários, sinalizando o motivo de cada
+  indisponibilidade (horário já passado, conflito, tempo insuficiente até o
+  fechamento)
+- Controle de status do agendamento (Agendado → Confirmado → Concluído / Cancelado)
+- Painel da agenda do dia, com filtro por data e busca
+
+## Estrutura
+
+```
+abarbeirados/
+├── back/    Spring Boot — controller / service / repository / dto / model / mapper
+└── front/   Angular — core (models, services, guards) / features / shared
+```
+
+## Como executar
+
+O backend precisa subir antes do frontend. A senha do PostgreSQL não fica no
+código: informe-a na variável de ambiente `DB_PASSWORD` antes de subir o backend
+ou rodar os testes.
+
+```bash
+export DB_PASSWORD=sua_senha        # Linux / macOS
+$env:DB_PASSWORD = "sua_senha"      # Windows (PowerShell)
+```
+
+```bash
+cd back
+./mvnw spring-boot:run      # Linux / macOS
+mvnw.cmd spring-boot:run    # Windows
+```
+
+```bash
+cd front
+npm install
+npm start
+```
+
+Backend em `http://localhost:8080`, frontend em `http://localhost:4200`. O
+`proxy.conf.json` encaminha `/api` para a 8080, então não há CORS em
+desenvolvimento.
+
+### Login
+
+A tela inicial exige login com autenticação JWT. Não há usuário padrão: crie o
+primeiro em **Criar usuário** (`/cadastro`) e depois entre com ele. A senha é
+gravada em BCrypt e o token expira em 1 hora.
+
+### Variáveis de ambiente
+
+Nenhuma credencial fica no código. `DB_PASSWORD` é sempre obrigatória; as demais
+têm um padrão de desenvolvimento e devem ser definidas em produção.
+
+| Variável | Para que serve | Padrão em desenvolvimento |
+|---|---|---|
+| `DB_URL` | URL JDBC do PostgreSQL | `jdbc:postgresql://localhost:5432/abarbeirados` |
+| `DB_USERNAME` | usuário do banco | `postgres` |
+| `DB_PASSWORD` | senha do banco | sem padrão (obrigatória) |
+| `JWT_SECRET` | chave de assinatura do token, em Base64 (`openssl rand -base64 48`) | chave aleatória a cada subida |
+| `CORS_ALLOWED_ORIGINS` | origens liberadas no CORS, separadas por vírgula | `http://localhost:4200` |
+
+### Documentação da API
+
+Com o backend no ar, a documentação interativa fica em
+`http://localhost:8080/swagger-ui.html`, com todos os endpoints prontos para
+execução direto pelo navegador (ou importáveis no Insomnia/Postman a partir de
+`http://localhost:8080/v3/api-docs`).
+
+### Banco de dados
+
+**PostgreSQL** — crie o banco `abarbeirados`. Usuário, senha e endereço vêm das
+variáveis de ambiente `DB_USERNAME`, `DB_PASSWORD` e `DB_URL` (padrão de
+desenvolvimento: usuário `postgres` em `localhost:5432`; a senha não tem padrão).
+
+As migrations do Flyway (`back/src/main/resources/db/migration`) criam o schema e
+populam o catálogo de serviços automaticamente na inicialização do backend.
+
+## Deploy na AWS (EC2)
+
+O script `provisionar-ec2.sh`, na raiz do repositório, prepara uma instância do
+zero: instala JDK 17, Node.js 22, PostgreSQL e Apache, cria o banco, gera as
+credenciais, faz o build do back-end e do front-end e deixa tudo no ar.
+
+**1. Crie a instância**
+
+- AMI **Ubuntu Server 26.04 LTS** (ou 24.04), tipo `t3.small` ou maior, disco de
+  8 GB ou mais.
+- **Security Group** com apenas duas regras de entrada:
+
+  | Porta | Origem | Para quê |
+  |---|---|---|
+  | 22 (SSH) | somente o seu IP | administração |
+  | 80 (HTTP) | `0.0.0.0/0` | aplicação |
+
+  As portas 8080 (back-end) e 5432 (PostgreSQL) **não** são liberadas: os dois
+  escutam só em `127.0.0.1`, e quem atende a internet é o Apache.
+
+**2. Execute o script**
+
+```bash
+ssh -i sua-chave.pem ubuntu@IP_PUBLICO
+git clone https://github.com/jprospirski/abarbeirados.git
+cd abarbeirados
+sudo bash provisionar-ec2.sh
+```
+
+Leva alguns minutos. Ao final o script mostra o endereço da aplicação. Acesse
+`http://IP_PUBLICO/cadastro` para criar o primeiro usuário e depois faça login.
+
+O script deve ser executado de dentro da pasta do projeto, onde ficam `back/` e
+`front/`. Para atualizar a aplicação depois, rode `git pull` nessa pasta e
+execute o script de novo: ele mantém as credenciais já geradas, refaz o build e
+reinicia o serviço.
+
+**O que o script configura**
+
+| Item | Onde fica |
+|---|---|
+| Back-end (serviço systemd `abarbeirados`) | `/opt/abarbeirados/abarbeirados.jar` |
+| Front-end (build de produção do Angular) | `/var/www/abarbeirados` |
+| Apache (fallback de rotas SPA e proxy de `/api`) | `/etc/apache2/sites-available/abarbeirados.conf` |
+| Credenciais (senha do banco e chave do JWT, geradas na instância) | `/etc/abarbeirados.env`, legível só pelo root |
+
+**Logs e operação**
+
+```bash
+sudo journalctl -u abarbeirados -f                 # log do back-end em tempo real
+sudo journalctl -u abarbeirados -n 100 --no-pager  # últimas 100 linhas
+sudo systemctl status abarbeirados                 # situação do serviço
+sudo systemctl restart abarbeirados                # reiniciar o back-end
+sudo tail -f /var/log/apache2/access.log /var/log/apache2/error.log
+```
+
 ---
 
-Projeto acadêmico — Abarbeirados — Uniamérica, 2026.
+Projeto acadêmico — Abarbeirados — Uniamerica, 2026.

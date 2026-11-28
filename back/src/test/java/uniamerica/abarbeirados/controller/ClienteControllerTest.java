@@ -3,11 +3,14 @@ package uniamerica.abarbeirados.controller;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import uniamerica.abarbeirados.security.JwtService;
 import uniamerica.abarbeirados.dto.cliente.ClienteRequest;
 import uniamerica.abarbeirados.dto.cliente.ClienteResponse;
 import uniamerica.abarbeirados.exception.NegocioException;
@@ -31,6 +34,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static uniamerica.abarbeirados.controller.ControllerErrorAssertions.assertApiError;
 
 @WebMvcTest(ClienteController.class)
+// - o teste e do controller: os filtros de seguranca ficam fora e o JWT e coberto nos testes de security
+@AutoConfigureMockMvc(addFilters = false)
 class ClienteControllerTest {
 
     private static final String ROTA = "/api/clientes";
@@ -40,6 +45,16 @@ class ClienteControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    // - dependencias do JwtAuthenticationFilter, que o WebMvcTest ainda instancia
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private UserDetailsService userDetailsService;
+
+    @MockitoBean
+    private uniamerica.abarbeirados.service.CepService cepService;
 
     @MockitoBean
     private ClienteService clienteService;
@@ -143,10 +158,10 @@ class ClienteControllerTest {
     }
 
     @Test
-    void criar_quandoTelefoneVazio_retornaErroDeValidacao() throws Exception {
-        // Arrange
+    void criar_quandoTelefoneAusente_retornaErroDeValidacao() throws Exception {
+        // Arrange (telefone nulo so viola o @NotBlank; vazio violaria tambem o @Pattern)
         String corpo = """
-                {"nome": "Ana", "email": "ana@example.com", "telefone": ""}
+                {"nome": "Ana", "email": "ana@example.com", "telefone": null}
                 """;
 
         // Act

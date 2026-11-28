@@ -119,7 +119,8 @@ class ServicoServiceTest {
     @Test
     void listar_quandoApenasAtivosTrueENomeBranco_retornaAtivos() {
         // Arrange
-        when(servicoRepository.findByAtivo(true)).thenReturn(List.of(servico));
+        // - o filtro de ativos e aplicado em memoria sobre o findAll, para combinar com o filtro de nome
+        when(servicoRepository.findAll()).thenReturn(List.of(servico));
         when(servicoMapper.forResponse(servico)).thenReturn(response);
 
         // Act
@@ -128,8 +129,8 @@ class ServicoServiceTest {
         // Assert
         assertThat(resultado).containsExactly(response);
         verify(servicoRepository, never()).findByNomeContainingIgnoreCase(any());
-        verify(servicoRepository).findByAtivo(true);
-        verify(servicoRepository, never()).findAll();
+        verify(servicoRepository, never()).findByAtivo(any());
+        verify(servicoRepository).findAll();
     }
 
     @Test

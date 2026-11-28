@@ -38,3 +38,8 @@ HELP.md
 .env
 .env.local
 *.local.properties
+
+# ===== Pacotes de entrega e copias de trabalho (nao versionar) =====
+*.rar
+*.zip
+*.tar.gz

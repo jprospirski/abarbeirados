@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
-import { AuthService } from './core/services/auth.service';
+import { LoginService } from './features/auth/login/login.service';
 import { TemaService } from './core/services/tema.service';
 
 // - a lateral só aparece com sessão aberta: no login o menu só ofereceria links que o guard devolveria
@@ -16,10 +16,10 @@ export class AppComponent {
 
   protected readonly nome = 'Abarbeirados';
   protected readonly tema = inject(TemaService);
-  protected readonly auth = inject(AuthService);
+  protected readonly auth = inject(LoginService);
 
   protected sair(): void {
-    this.auth.logout();
+    this.auth.removerToken();
     this.router.navigateByUrl('/login');
   }
 }
