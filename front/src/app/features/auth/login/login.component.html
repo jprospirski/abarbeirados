@@ -1,5 +1,5 @@
 <div class="entrar">
-  <form class="entrar__painel painel" [formGroup]="form" (ngSubmit)="entrar()">
+  <form class="entrar__painel painel" (ngSubmit)="logar()">
     <div class="bloco">
       <p class="rotulo">Acesso</p>
       <h1 class="entrar__titulo">Entrar</h1>
@@ -10,8 +10,9 @@
           mdbInput
           type="text"
           id="usuario"
+          name="username"
           class="form-control"
-          formControlName="usuario"
+          [(ngModel)]="login.username"
           autocomplete="username"
         />
         <label mdbLabel class="form-label" for="usuario">Usuário</label>
@@ -22,25 +23,21 @@
           mdbInput
           type="password"
           id="senha"
+          name="password"
           class="form-control"
-          formControlName="senha"
+          [(ngModel)]="login.password"
           autocomplete="current-password"
         />
         <label mdbLabel class="form-label" for="senha">Senha</label>
       </mdb-form-control>
 
-      @if (erro()) {
-        <p class="alerta alerta--erro" role="alert">{{ erro() }}</p>
-      }
-
-      <button
-        type="submit"
-        class="botao-principal entrar__botao"
-        mdbRipple
-        [disabled]="entrando()"
-      >
-        {{ entrando() ? 'Entrando...' : 'Entrar' }}
+      <button type="submit" class="botao-principal entrar__botao" [disabled]="entrando">
+        {{ entrando ? 'Entrando...' : 'Entrar' }}
       </button>
+
+      <p class="entrar__legenda entrar__troca">
+        Ainda não tem acesso? <a routerLink="/cadastro">Criar usuário</a>
+      </p>
     </div>
   </form>
 </div>
