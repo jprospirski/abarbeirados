@@ -11,7 +11,7 @@ import { Usuario } from '../usuario';
 export class LoginService {
 
   http = inject(HttpClient);
-  // - caminho relativo, como nos outros services: em dev o proxy do angular leva ao backend, em produção o nginx
+  // - caminho relativo, como nos outros services: em dev o proxy do angular leva ao backend, em produção o Apache
   API = "/api/login";
   API_REGISTRO = "/api/register";
 
