@@ -1,0 +1,56 @@
+<div class="entrar">
+  <form class="entrar__painel painel" (ngSubmit)="registrar()">
+    <div class="bloco">
+      <p class="rotulo">Acesso</p>
+      <h1 class="entrar__titulo">Criar usuário</h1>
+      <p class="entrar__legenda">Cadastre um usuário para acessar o sistema da barbearia.</p>
+
+      <mdb-form-control class="entrar__campo">
+        <input
+          mdbInput
+          type="text"
+          id="usuario"
+          name="username"
+          class="form-control"
+          [(ngModel)]="login.username"
+          autocomplete="username"
+        />
+        <label mdbLabel class="form-label" for="usuario">Usuário</label>
+      </mdb-form-control>
+
+      <mdb-form-control class="entrar__campo">
+        <input
+          mdbInput
+          type="password"
+          id="senha"
+          name="password"
+          class="form-control"
+          [(ngModel)]="login.password"
+          autocomplete="new-password"
+        />
+        <label mdbLabel class="form-label" for="senha">Senha (mínimo 6 caracteres)</label>
+      </mdb-form-control>
+
+      <mdb-form-control class="entrar__campo">
+        <input
+          mdbInput
+          type="password"
+          id="confirmacao"
+          name="confirmacao"
+          class="form-control"
+          [(ngModel)]="confirmacao"
+          autocomplete="new-password"
+        />
+        <label mdbLabel class="form-label" for="confirmacao">Confirmar senha</label>
+      </mdb-form-control>
+
+      <button type="submit" class="botao-principal entrar__botao" [disabled]="salvando">
+        {{ salvando ? 'Salvando...' : 'Criar usuário' }}
+      </button>
+
+      <p class="entrar__legenda entrar__troca">
+        Já tem acesso? <a routerLink="/login">Entrar</a>
+      </p>
+    </div>
+  </form>
+</div>
