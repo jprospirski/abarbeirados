@@ -2,6 +2,7 @@ package uniamerica.abarbeirados.security;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -13,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import uniamerica.abarbeirados.auth.LoginController;
 import uniamerica.abarbeirados.auth.LoginRepository;
 import uniamerica.abarbeirados.auth.LoginService;
+import uniamerica.abarbeirados.auth.RegistroController;
 import uniamerica.abarbeirados.auth.Usuario;
 import uniamerica.abarbeirados.controller.ServicoController;
 import uniamerica.abarbeirados.service.ServicoService;
@@ -36,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Fluxo de autenticação de ponta a ponta na camada web, com a cadeia de
  * segurança real (filtro JWT, SecurityConfig, BCrypt). Só o banco é simulado.
  */
-@WebMvcTest(controllers = {LoginController.class, ServicoController.class})
+@WebMvcTest(controllers = {LoginController.class, RegistroController.class, ServicoController.class})
 @Import({SecurityConfig.class, Maneger.class, JwtService.class, LoginService.class})
 class SegurancaJwtTest {
 
@@ -121,6 +123,48 @@ class SegurancaJwtTest {
         mockMvc.perform(post("/api/login").contentType(MediaType.APPLICATION_JSON).content(corpo))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Usuário ou senha inválidos"));
+    }
+
+    @Test
+    void registrar_quandoDadosValidos_gravaSenhaEmBCrypt() throws Exception {
+        String corpo = """
+                {"username": "bruno", "password": "segredo123"}
+                """;
+        when(loginRepository.existsByUsername("bruno")).thenReturn(false);
+
+        mockMvc.perform(post("/api/register").contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isCreated());
+
+        ArgumentCaptor<Usuario> salvo = ArgumentCaptor.forClass(Usuario.class);
+        verify(loginRepository).save(salvo.capture());
+        assertThat(salvo.getValue().getUsername()).isEqualTo("bruno");
+        assertThat(salvo.getValue().getRole()).isEqualTo(LoginService.ROLE_PADRAO);
+        assertThat(salvo.getValue().getPassword()).isNotEqualTo("segredo123");
+        assertThat(passwordEncoder.matches("segredo123", salvo.getValue().getPassword())).isTrue();
+    }
+
+    @Test
+    void registrar_quandoUsuarioJaExiste_retorna400SemSalvar() throws Exception {
+        when(loginRepository.existsByUsername("ana")).thenReturn(true);
+
+        mockMvc.perform(post("/api/register").contentType(MediaType.APPLICATION_JSON).content(CREDENCIAIS))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Já existe um usuário com esse nome."));
+
+        verify(loginRepository, never()).save(any());
+    }
+
+    @Test
+    void registrar_quandoSenhaCurta_retornaErroDeValidacao() throws Exception {
+        String corpo = """
+                {"username": "bruno", "password": "123"}
+                """;
+
+        mockMvc.perform(post("/api/register").contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fields.password").exists());
+
+        verify(loginRepository, never()).save(any());
     }
 
     @Test
